@@ -2,12 +2,12 @@ module testing
 
 contains
 
-    subroutine test_timing_comparison(natoms, rc)
+    subroutine test_timing_comparison(natoms, rc, elapsed_time)
         use distance_module
 
         implicit none
 
-        iteger, parameter :: ntimes = 5
+        integer, parameter :: ntimes = 5
 
         ! Input variables ******************************************************
         integer, intent(in) :: natoms
@@ -17,7 +17,7 @@ contains
         real, dimension(2), intent(out) :: elapsed_time
 
         ! Local variables ******************************************************
-        integer :: i, j, ntimes
+        integer :: i, j, k 
 
         real, dimension(3) :: box, rtmp
         real, dimension(natoms,3) :: r
@@ -51,31 +51,30 @@ contains
         do i=1, ntimes
             ! Generate Coordinates ****************************************************
             ! Initialize positions within box
-            do i=1, natoms
+            do j=1, natoms
                 rtmp = 0.0
-                do j=1, 3
-                    call random_number(rtmp(j))
+                do k=1, 3
+                    call random_number(rtmp(k))
                 enddo
-                r(i,:) = rtmp(:)*box(:)
+                r(j,:) = rtmp(:)*box(:)
             end do
             ! Cell-List Approach ******************************************************
             call cpu_time(start_time)
             call cell_list_distance(r, r, box, cell_length, rc_sq, dr_values, dr_atom1, dr_atom2, same_array=1)
             call cpu_time(end_time)
-            elapsed_time(1) = elapsed_time + end_time - start_time
+            elapsed_time(1) = elapsed_time(1) + end_time - start_time
             ! Naive Approach **********************************************************
             call cpu_time(start_time)
             call double_loop_distance(r, r, box, rc_sq, dr_values_naive, dr_atom1_naive, dr_atom2_naive &
-                            , cell_assign_1, cell_assign_2, compare_cell=1, same_array=1)
+                            , cell_assign_1, cell_assign_2, compare_cell=1, same_array=1, cell_length=cell_length)
             call cpu_time(end_time)
-            elapsed_time(2) = elapsed_time + end_time - start_time
-
+            elapsed_time(2) = elapsed_time(2) + end_time - start_time
         enddo
         elapsed_time = elapsed_time/ntimes
 
         open(10, file="map_reg.dat")
         open(11, file="map_naive.dat")
-        do i=1, 1000
+        do i=1, natoms*500
             write(10,*) dr_values(i), dr_atom1(i), dr_atom2(i), dr_values_naive(i), dr_atom1_naive(i), dr_atom2_naive(i)
             write(11,*) dr_atom1_naive(i), cell_assign_1(i,1), cell_assign_1(i,2), cell_assign_1(i,3)
             write(11,*) dr_atom2_naive(i), cell_assign_2(i,1), cell_assign_2(i,2), cell_assign_2(i,3)
@@ -84,6 +83,6 @@ contains
         close(11)
 
 
-    end subroutine test_and_time_distance
+    end subroutine test_timing_comparison
 
 end module testing

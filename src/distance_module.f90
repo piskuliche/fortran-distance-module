@@ -11,11 +11,12 @@ module distance_module
     integer, parameter :: max_bins = 500
 
     ! Variables ****************************************************************
-    integer, dimension(3) :: nbins ! Number of bins in each direction
-    integer, dimension(max_cells) :: list_r1, list_r2 ! Linked list
-    integer, dimension(:,:,:), allocatable :: head_r1, head_r2 ! Head of linked list
+    integer, dimension(3) :: nbins 
+    integer, dimension(max_cells) :: list_r1, list_r2 
+    integer, dimension(:,:,:), allocatable :: head_r1, head_r2 
 
 contains
+
     ! **************************************************************************
     ! Functions ****************************************************************
     ! **************************************************************************
@@ -68,7 +69,7 @@ contains
         ! Inputs **************************************************************
         real, dimension(3), intent(in) :: r1, r2, box
         ! Outputs *************************************************************
-        real, intent(out) :: dr_sq
+        real :: dr_sq
         ! Local Variables *****************************************************
         integer :: i
         real, dimension(3) :: dr_tmp
@@ -103,7 +104,7 @@ contains
         ! Inputs **************************************************************
         real, dimension(3), intent(in) :: r1, r2, box
         ! Outputs *************************************************************
-        real, dimension(4), intent(out) :: dr_arr
+        real, dimension(4) :: dr_arr
         ! Local Variables *****************************************************
         integer :: i
         real :: dr
@@ -111,7 +112,7 @@ contains
         real, dimension(3) :: dr_tmp
         ! *********************************************************************
 
-        dr_sq = 0.0; dr = 0.0; dr_arr = 0.0; dr_tmp = 0.0
+        dr = 0.0; dr_arr = 0.0; dr_tmp = 0.0
         Do i=1,3
             ! Calculate the distance between the two atoms
             dr_tmp(i) = r1(i) - r2(i)
@@ -231,7 +232,7 @@ contains
 
     end subroutine setup_grid
 
-    subroutine cell_list_distance(r1, r2, box, cell_length, rc_sq, dr_values, dr_atom1, dr_atom2, same_array=0)
+    subroutine cell_list_distance(r1, r2, box, cell_length, rc_sq, dr_values, dr_atom1, dr_atom2, same_array)
     ! This subroutine calculates the distance between all pairs of atoms in a system
     ! using a cell linked list. 
     !
@@ -274,16 +275,16 @@ contains
         real, dimension(:), intent(out) :: dr_values
         integer, dimension(:), intent(out) :: dr_atom1, dr_atom2
         ! Local Variables *****************************************************
-        integer :: i, j, k, l, m, n ! Loop Indices
-        integer :: ii, jj, kk       ! Calculated inner loop bin indices
-        integer :: di               ! Coordinate loop index
-        integer :: ihead, jhead     ! Value of head for inner and out loop lists
-        integer :: count            ! Number of pairs found
-        real :: rsq                 ! Temporary distance squared
+        integer :: i, j, k, l, m, n 
+        integer :: ii, jj, kk       
+        integer :: di               
+        integer :: ihead, jhead     
+        integer :: count            
+        real :: rsq               
 
-        integer, dimension(3) :: ir         ! Bin indices
-        real, dimension(3) :: dr_tmp        ! Temporary distance vector
-        integer, dimension(3,500) :: map    ! Map of bin indices
+        integer, dimension(3) :: ir         
+        real, dimension(3) :: dr_tmp        
+        integer, dimension(3,500) :: map   
         ! *********************************************************************
 
         ! Set up the grid for the distance calculation
@@ -307,7 +308,7 @@ contains
 
         count = 0 ! Set Count to Zero
         ! Distance Calculation ****************************************************
-        if ( present(same_aray) .and. same_array == 1) then
+        if ( present(same_array) .and. same_array == 1) then
             ! Array is the Same ***************************************************
             Do i=1, nbins(1)
             Do j=1, nbins(2)
@@ -405,8 +406,8 @@ contains
         
     end subroutine cell_list_distance
 
-    subroutine double_loop_distance(r1, r2, box, rc_sq, &
-        , dr_values, dr_atom1, dr_atom2, cell_assign_1, cell_assign_2, compare_cell=0, same_array=0)
+    subroutine double_loop_distance(r1, r2, box, rc_sq &
+        , dr_values, dr_atom1, dr_atom2, cell_assign_1, cell_assign_2, compare_cell, same_array, cell_length)
     ! This subroutine calculates the distance between all pairs of atoms in a system
     ! using a double loop.
     !
@@ -431,8 +432,9 @@ contains
         real, intent(in) :: rc_sq
         real, dimension(:,:), intent(in) :: r1, r2 ! Coordinates
         real, dimension(:), intent(in) :: box ! Box dimensions
-        integer, intent(in) :: compare_cell ! Flag to compare with cell list method
+        integer, intent(in), optional :: compare_cell ! Flag to compare with cell list method
         integer, intent(in), optional :: same_array   ! Flag to compare with same array (default 0)
+        real, intent(in), optional :: cell_length
         ! Outputs *************************************************************
         real, dimension(:), intent(out) :: dr_values
         integer, dimension(:), intent(out) :: dr_atom1, dr_atom2
@@ -442,12 +444,13 @@ contains
         integer :: count    ! Number of pairs found
         real :: rsq         ! Temporary distance squared
 
+
         real, dimension(3) :: dr_tmp        ! Temporary distance vector
         integer, dimension(3,500) :: map    ! Map of bin indices
         ! ************************************************************************
 
         ! Set up the grid for the distance calculation if compare_cell is set
-        if (compare_cell == 1) then
+        if (present(compare_cell) .and. compare_cell == 1) then
             call setup_grid(cell_length, box, nbins, map)
         end if
 
@@ -471,9 +474,9 @@ contains
                         dr_atom1(count) = i
                         dr_atom2(count) = j
                         ! Assign the cell indices if compare_cell == 1
-                        If (compare_cell == 1) then
-                            cell_assign_1(count,:) = assign_bins(r1(i,:), nbins, box)
-                            cell_assign_2(count,:) = assign_bins(r2(j,:), nbins, box)
+                        If (present(compare_cell) .and. compare_cell == 1) then
+                            cell_assign_1(count,:) = assign_to_grid(r1(i,:), nbins, box)
+                            cell_assign_2(count,:) = assign_to_grid(r2(j,:), nbins, box)
                         EndIf
                     EndIf
                 EndDo
@@ -492,9 +495,9 @@ contains
                         dr_atom1(count) = i
                         dr_atom2(count) = j
                         ! Assign the cell indices if compare_cell == 1
-                        If (compare_cell == 1) then
-                            cell_assign_1(count,:) = assign_bins(r1(i,:), nbins, box)
-                            cell_assign_2(count,:) = assign_bins(r2(j,:), nbins, box)
+                        If (present(compare_cell) .and. compare_cell == 1) then
+                            cell_assign_1(count,:) = assign_to_grid(r1(i,:), nbins, box)
+                            cell_assign_2(count,:) = assign_to_grid(r2(j,:), nbins, box)
                         EndIf
                     EndIf
                 EndDo
