@@ -142,10 +142,10 @@ contains
     ! *********************************************************************
 
     dr12 = 0.0; dr23 = 0.0
-    dr12 = periodic_distance_and_vector(r1, r2, box)
+    dr12 = periodic_distance_and_vector(r2, r1, box)
     dr23 = periodic_distance_and_vector(r2, r3, box)
     theta = acos(dot_product(dr12(1:3), dr23(1:3)))
-    
+
     end function angle_between_points
     ! **************************************************************************
 
