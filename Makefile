@@ -1,6 +1,6 @@
 # Compiler settings
 FC = mpif90
-FFLAGS = -O3 -std=f2008 -fopenmp -lmpi -fbounds-check
+FFLAGS = -O3 -std=f2008 -fopenmp -lmpi
 
 # Source files
 SRC_DIR = src
@@ -18,8 +18,12 @@ MPI_MAIN_OBJ = $(patsubst $(SRC_DIR)/%.f90,$(OBJ_DIR)/%.o,$(MPI_MAIN_SRC))
 MAIN_EXE = my_program
 MPI_MAIN_EXE = mpi_main
 
+# Library names
+LIB_DIR = lib
+DISTANCE_LIB = $(LIB_DIR)/libdistance.so
+
 # Targets
-all: $(MAIN_EXE) $(MPI_MAIN_EXE)
+all: $(MAIN_EXE) $(MPI_MAIN_EXE) $(DISTANCE_LIB)
 
 $(MAIN_EXE): $(MOD_OBJ) $(MAIN_OBJ)
 	$(FC) $(FFLAGS) -o $@ $^
@@ -30,7 +34,10 @@ $(MPI_MAIN_EXE): $(MOD_OBJ) $(MPI_MAIN_OBJ)
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.f90
 	$(FC) $(FFLAGS) -c $< -o $@
 
+$(DISTANCE_LIB): $(OBJ_DIR)/distance_module.o
+	$(FC) -shared -o $@ $<
+
 clean:
-	rm $(OBJ_DIR)/*.o $(MAIN_EXE) $(MPI_MAIN_EXE) *.mod *.dat
+	rm $(OBJ_DIR)/*.o $(MAIN_EXE) $(MPI_MAIN_EXE) $(DISTANCE_LIB) *.mod *.dat
 
 .PHONY: clean
