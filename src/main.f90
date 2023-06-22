@@ -4,14 +4,14 @@ program distance_calculation
 
     implicit none
     integer :: i
-    integer, dimension(12) :: natoms
+    integer, dimension(20) :: natoms
     real :: rc
     real, dimension(2) :: elapsed_time
 
  
     
     natoms(1) = 10
-    Do i=2, 12
+    Do i=2, 20
         natoms(i) = natoms(i-1)*2
     EndDo
 
@@ -19,7 +19,7 @@ program distance_calculation
 
     open(15, file="rc_3.0.dat")
     rc = 3.0
-    Do i=1,11
+    Do i=1,20
         elapsed_time = 0.0
         write(*,*) natoms(i), " atoms"
         call test_timing_comparison(natoms(i), rc, elapsed_time)
@@ -31,7 +31,7 @@ program distance_calculation
 
     open(15, file="rc_6.0.dat")
     rc = 6
-    Do i=1,11
+    Do i=1,20
         elapsed_time = 0.0
         write(*,*) natoms(i), " atoms"
         call test_timing_comparison(natoms(i), rc, elapsed_time)
@@ -43,7 +43,7 @@ program distance_calculation
 
     open(15, file="rc_12.0.dat")
     rc = 12.0
-    Do i=1,11
+    Do i=1,20
         elapsed_time = 0.0
         write(*,*) natoms(i), " atoms"
         call test_timing_comparison(natoms(i), rc, elapsed_time)
