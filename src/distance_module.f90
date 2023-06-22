@@ -127,6 +127,26 @@ contains
         dr_arr(4) = dr
 
     end function periodic_distance_and_vector
+
+    function angle_between_points(r1, r2, r3, box) result(theta)
+    ! This function calculates the angle between three points in a periodic system.
+    !
+    implicit none
+
+    ! Inputs **************************************************************
+    real, dimension(3), intent(in) :: r1, r2, r3, box
+    ! Outputs *************************************************************
+    real :: theta
+    ! Local Variables *****************************************************
+    real, dimension(4) :: dr12, dr23
+    ! *********************************************************************
+
+    dr12 = 0.0; dr23 = 0.0
+    dr12 = periodic_distance_and_vector(r1, r2, box)
+    dr23 = periodic_distance_and_vector(r2, r3, box)
+    theta = acos(dot_product(dr12(1:3), dr23(1:3)))
+    
+    end function angle_between_points
     ! **************************************************************************
 
 
