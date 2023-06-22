@@ -1,7 +1,7 @@
 import numpy as np
 
 v1, a1, a2, nv1, na1, na2 = np.genfromtxt("map_reg.dat", usecols=(0,1,2,3,4,5), unpack=True)
-
+    
 i=0
 for v in nv1:
     if v not in v1:

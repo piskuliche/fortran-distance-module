@@ -232,7 +232,7 @@ contains
 
     end subroutine setup_grid
 
-    subroutine cell_list_distance(r1, r2, box, cell_length, rc_sq, dr_values, dr_atom1, dr_atom2, same_array)
+    subroutine cell_list_distance(r1, r2, box, cell_length, rc_sq, dr_values, dr_atom1, dr_atom2, same_array, offset)
     ! This subroutine calculates the distance between all pairs of atoms in a system
     ! using a cell linked list. 
     !
@@ -271,6 +271,7 @@ contains
         real, dimension(:,:), intent(in) :: r1, r2
         real, dimension(:), intent(in) :: box
         integer, intent(in), optional :: same_array
+        integer, intent(in), optional :: offset
         ! Outputs *************************************************************
         real, dimension(:), intent(out) :: dr_values
         integer, dimension(:), intent(out) :: dr_atom1, dr_atom2
@@ -279,7 +280,8 @@ contains
         integer :: ii, jj, kk       
         integer :: di               
         integer :: ihead, jhead     
-        integer :: count            
+        integer :: count
+        integer :: add_offset        
         real :: rsq               
 
         integer, dimension(3) :: ir         
@@ -305,6 +307,11 @@ contains
         call build_linked_list(r1, nbins, box, head_r1, list_r1)
         call build_linked_list(r2, nbins, box, head_r2, list_r2)
 
+        if (present(offset) .and. offset > 0) then
+            add_offset = offset
+        else
+            add_offset = 0
+        endif
 
         count = 0 ! Set Count to Zero
         ! Distance Calculation ****************************************************
@@ -328,15 +335,15 @@ contains
                         ! Loop over atoms in the neighboring cell
                         jhead = head_r2(ii, jj, kk)
 
-                        Do While (jhead /= 0 .and. jhead /= ihead)
+                        Do While (jhead /= 0 .and. (jhead /= ihead + add_offset))
                             ! Calculate the distance between the atoms
                             rsq = periodic_distance2(r1(ihead,:), r2(jhead,:), box)
 
                             ! Distance cutoff
-                            If (rsq < rc_sq .and. ihead < jhead) Then
+                            If (rsq < rc_sq .and. (ihead+add_offset < jhead)) Then
                                 count = count + 1
                                 dr_values(count) = rsq
-                                dr_atom1(count) = ihead
+                                dr_atom1(count) = ihead+add_offset
                                 dr_atom2(count) = jhead
                             EndIf
 
@@ -377,7 +384,7 @@ contains
                             rsq = periodic_distance2(r1(ihead,:), r2(jhead,:), box)
 
                             ! Apply distance cutoff
-                            If (rsq < rc_sq) Then
+                            If (rsq < rc_sq .and. rsq > 0) Then
                                 count = count + 1
                                 dr_values(count) = rsq
                                 dr_atom1(count) = ihead
@@ -398,8 +405,8 @@ contains
             EndDo !i
             ! *********************************************************************
         EndIf
+        write(*,*) "count", count
         ! *************************************************************************
-
         ! Deallocate the head arrays
         deallocate(head_r1)
         deallocate(head_r2)
@@ -468,7 +475,7 @@ contains
                     ! Periodic distance calculation
                     rsq = periodic_distance2(r1(i,:), r2(j,:), box)
                     ! Distance cutoff & store non-zero elements
-                    If (rsq < rc_sq) Then
+                    If (rsq < rc_sq .and. rsq > 0) Then
                         count = count + 1
                         dr_values(count) = rsq
                         dr_atom1(count) = i
@@ -505,7 +512,7 @@ contains
             ! **********************************************************************
         EndIf
         ! **************************************************************************
-    
+        write(*,*) "dcount", count
     end subroutine double_loop_distance
 
 end module distance_module
