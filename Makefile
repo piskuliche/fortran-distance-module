@@ -29,18 +29,18 @@ DISTANCE_LIB = $(LIB_DIR)/libdistance.so
 all: $(MAIN_EXE) $(MPI_MAIN_EXE) $(DISTANCE_LIB)
 
 $(MAIN_EXE): $(MOD_OBJ) $(MAIN_OBJ)
-    $(FC) $(FFLAGS) -o $@ $^
+	$(FC) $(FFLAGS) -o $@ $^
 
 $(MPI_MAIN_EXE): $(MOD_OBJ) $(MPI_MAIN_OBJ)
-    $(FC) $(FFLAGS) -o $@ $^
+	$(FC) $(FFLAGS) -o $@ $^
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.f90
-    $(FC) $(FFLAGS) -c $< -o $@
+	$(FC) $(FFLAGS) -c $< -o $@
 
 $(DISTANCE_LIB): $(OBJ_DIR)/distance_module.o
-    $(FC) -shared -o $@ $<
+	$(FC) -shared -o $@ $<
 
 clean:
-    rm $(OBJ_DIR)/*.o $(MAIN_EXE) $(MPI_MAIN_EXE) $(DISTANCE_LIB) *.mod *.dat
+	rm $(OBJ_DIR)/*.o $(MAIN_EXE) $(MPI_MAIN_EXE) $(DISTANCE_LIB) *.mod *.dat
 
 .PHONY: clean
