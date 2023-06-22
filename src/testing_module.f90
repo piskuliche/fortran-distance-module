@@ -64,11 +64,11 @@ contains
             call cpu_time(end_time)
             elapsed_time(1) = elapsed_time(1) + end_time - start_time
             ! Naive Approach **********************************************************
-            !call cpu_time(start_time)
-            !call double_loop_distance(r, r, box, rc_sq, dr_values_naive, dr_atom1_naive, dr_atom2_naive &
-            !                , cell_assign_1, cell_assign_2, compare_cell=1, same_array=1, cell_length=cell_length)
-            !call cpu_time(end_time)
-            !elapsed_time(2) = elapsed_time(2) + end_time - start_time
+            call cpu_time(start_time)
+            call double_loop_distance(r, r, box, rc_sq, dr_values_naive, dr_atom1_naive, dr_atom2_naive &
+                            , cell_assign_1, cell_assign_2, compare_cell=1, same_array=1, cell_length=cell_length)
+            call cpu_time(end_time)
+            elapsed_time(2) = elapsed_time(2) + end_time - start_time
         enddo
         elapsed_time = elapsed_time/ntimes
 

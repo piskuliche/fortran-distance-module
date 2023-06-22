@@ -105,6 +105,7 @@ contains
             sparse_mat_values_local, sparse_mat_row_idx_local, sparse_mat_col_idx_local, same_array=1, offset=start_index)
 
         nnz_local = count(sparse_mat_values_local /= 0.0)
+        write(*,*) nnz_local
         !nnz_local = 1250
 
         call MPI_Barrier(comm, ierr)
