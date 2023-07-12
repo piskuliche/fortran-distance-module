@@ -6,15 +6,6 @@ module distance_module
 
     implicit none
 
-    ! Parameters **************************************************************
-    integer, parameter :: max_cells = 1000000
-    integer, parameter :: max_bins = 500
-
-    ! Variables ****************************************************************
-    integer, dimension(3) :: nbins 
-    integer, dimension(max_cells) :: list_r1, list_r2 
-    integer, dimension(:,:,:), allocatable :: head_r1, head_r2 
-
 contains
 
     ! **************************************************************************
@@ -168,11 +159,6 @@ contains
         real, dimension(3) :: dr_tmp        ! Temporary distance vector
         integer, dimension(3,500) :: map    ! Map of bin indices
         ! ************************************************************************
-
-        ! Set up the grid for the distance calculation if compare_cell is set
-        if (present(compare_cell) .and. compare_cell == 1) then
-            call setup_grid(cell_length, box, nbins, map)
-        end if
 
         ! Initialize the sparse matrix arrays
         dr_values = 0.0; dr_atom1 = 0; dr_atom2 = 0

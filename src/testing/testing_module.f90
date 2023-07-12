@@ -78,7 +78,7 @@ contains
             
             ! Cell-List Approach ******************************************************
             call cpu_time(start_time)
-            call cell_list_distance(r, r, box, cell_length, rc_sq, dr_values, dr_atom1, dr_atom2, same_array=1)
+            call cell_list_distance(r, r, box, cell_length, rc_sq, dr_values, dr_atom1, dr_atom2, same_array=.true.)
             call cpu_time(end_time)
             elapsed_time(1) = elapsed_time(1) + end_time - start_time
             ! Naive Approach **********************************************************
