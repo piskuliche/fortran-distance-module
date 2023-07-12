@@ -1,7 +1,8 @@
 
 subroutine cell_internal_distance(ihead_init, jhead_init, list_r1, list_r2, r1, r2, &
-                            box, rc_sq, dr_values, dr_atom1, dr_atom2, inner_count)
+                            box, rc_sq, dr_values, dr_atom1, dr_atom2, inner_count, same_array)
     ! This subroutine calculates the distance between all pairs of atoms in a single cell
+    ! TODO: Implement same_array feature.
     
     implicit none
     ! Arguments
@@ -21,11 +22,12 @@ subroutine cell_internal_distance(ihead_init, jhead_init, list_r1, list_r2, r1, 
     Do While (ihead /= 0)
         jhead   = jhead_init
 
-        Do While (jhead /= 0)
+        Do While (jhead /= 0) ! Might need to add somehting here
             ! Calculate the distance between the atoms
             rsq = periodic_distance2(r1(ihead,:), r2(jhead,:), box)
-
-            If (rsq < rc_sq) Then
+            same_condition = (same_array .and. ihead < jhead)
+            diff_condition = (.not. same_array)
+            If (rsq < rc_sq .and. (same_condition .or. diff_condition) ) Then
                 inner_count = inner_count + 1
                 dr_values(inner_count) = rsq
                 id_atom1(inner_count) = ihead
