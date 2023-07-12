@@ -29,28 +29,5 @@ program distance_calculation
     EndDo
     close(15)
 
-    open(15, file="rc_6.0.dat")
-    rc = 6
-    Do i=1,20
-        elapsed_time = 0.0
-        write(*,*) natoms(i), " atoms"
-        call test_timing_comparison(natoms(i), rc, elapsed_time)
-        write(*,*) "Elapsed time cell-list: ", elapsed_time(1), " seconds"
-        write(*,*) "Elapsed time double loop: ", elapsed_time(2), " seconds"
-        write(15,*) natoms(i), elapsed_time(1), elapsed_time(2)
-    EndDo
-    close(15)
-
-    open(15, file="rc_12.0.dat")
-    rc = 12.0
-    Do i=1,20
-        elapsed_time = 0.0
-        write(*,*) natoms(i), " atoms"
-        call test_timing_comparison(natoms(i), rc, elapsed_time)
-        write(*,*) "Elapsed time cell-list: ", elapsed_time(1), " seconds"
-        write(*,*) "Elapsed time double loop: ", elapsed_time(2), " seconds"
-        write(15,*) natoms(i), elapsed_time(1), elapsed_time(2)
-    EndDo
-    close(15)
 
 end program distance_calculation
