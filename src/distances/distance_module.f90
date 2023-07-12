@@ -193,11 +193,6 @@ contains
                         dr_values(count) = rsq
                         dr_atom1(count) = i
                         dr_atom2(count) = j
-                        ! Assign the cell indices if compare_cell == 1
-                        If (present(compare_cell) .and. compare_cell == 1) then
-                            cell_assign_1(count,:) = assign_to_grid(r1(i,:), nbins, box)
-                            cell_assign_2(count,:) = assign_to_grid(r2(j,:), nbins, box)
-                        EndIf
                     EndIf
                 EndDo
             EndDo
@@ -214,11 +209,6 @@ contains
                         dr_values(count) = rsq
                         dr_atom1(count) = i
                         dr_atom2(count) = j
-                        ! Assign the cell indices if compare_cell == 1
-                        If (present(compare_cell) .and. compare_cell == 1) then
-                            cell_assign_1(count,:) = assign_to_grid(r1(i,:), nbins, box)
-                            cell_assign_2(count,:) = assign_to_grid(r2(j,:), nbins, box)
-                        EndIf
                     EndIf
                 EndDo
             EndDo

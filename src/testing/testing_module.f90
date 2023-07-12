@@ -11,6 +11,7 @@ contains
         real, dimension(natoms,3), intent(out) :: r
         ! Local Variables
         integer :: i, j
+        real, dimension(3) :: rtmp
 
     
         do i=1, natoms

@@ -34,3 +34,5 @@
 *.dat
 my_program
 mpi_main
+
+build/*
