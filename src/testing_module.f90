@@ -1,9 +1,31 @@
 module testing 
+    implicit none
 
 contains
 
+    subroutine coordinate_generator(natoms, box, r)
+        implicit none
+        ! Input Arguments
+        integer, intent(in) :: natoms
+        real, dimension(3), intent(in) :: box
+        real, dimension(natoms,3), intent(out) :: r
+        ! Local Variables
+        integer :: i, j
+
+    
+        do i=1, natoms
+            rtmp = 0.0
+            do j=1, 3
+                call random_number(rtmp(j))
+            enddo
+            r(i,:) = rtmp(:)*box(:)
+        end do
+
+    end subroutine coordinate_generator
+
     subroutine test_timing_comparison(natoms, rc, elapsed_time)
         use distance_module
+        use linked_lists
 
         implicit none
 
@@ -51,13 +73,8 @@ contains
         do i=1, ntimes
             ! Generate Coordinates ****************************************************
             ! Initialize positions within box
-            do j=1, natoms
-                rtmp = 0.0
-                do k=1, 3
-                    call random_number(rtmp(k))
-                enddo
-                r(j,:) = rtmp(:)*box(:)
-            end do
+            call coordinate_generator(natoms, box, r)
+            
             ! Cell-List Approach ******************************************************
             call cpu_time(start_time)
             call cell_list_distance(r, r, box, cell_length, rc_sq, dr_values, dr_atom1, dr_atom2, same_array=1)
@@ -71,20 +88,6 @@ contains
             elapsed_time(2) = elapsed_time(2) + end_time - start_time
         enddo
         elapsed_time = elapsed_time/ntimes
-
-        !open(10, file="map_reg.dat")
-        !open(11, file="map_naive.dat")
-        !i = 1
-        !do while ( .True. )
-        !    if ( dr_values(i) == 0.0 ) exit
-        !    write(10,*) dr_values(i), dr_atom1(i), dr_atom2(i), dr_values_naive(i), dr_atom1_naive(i), dr_atom2_naive(i)
-        !    write(11,*) dr_atom1_naive(i), cell_assign_1(i,1), cell_assign_1(i,2), cell_assign_1(i,3)
-        !    write(11,*) dr_atom2_naive(i), cell_assign_2(i,1), cell_assign_2(i,2), cell_assign_2(i,3)
-        !    i = i + 1
-        !enddo
-        !close(10)
-        !close(11)
-
 
     end subroutine test_timing_comparison
 
