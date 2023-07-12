@@ -132,6 +132,7 @@ subroutine cell_list_distance(r1, r2, box, cell_length, rc_sq, dr_values, dr_ato
         r2 = r1
     else
         call build_linked_list(r2, nbins, box, head_r2, list_r2)
+    endif
 
     if (present(offset) .and. offset > 0) then
         add_offset = offset
