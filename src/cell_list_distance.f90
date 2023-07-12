@@ -30,16 +30,19 @@ subroutine cell_internal_distance(ihead_init, jhead_init, list_r1, list_r2, r1, 
             ! Calculate the distance between the atoms
             rsq = periodic_distance2(r1(ihead,:), r2(jhead,:), box)
 
+            ! Set up logical conditions
             same_condition = (same_array .and. ihead < jhead)
             diff_condition = (.not. same_array)
 
+            ! If the distance is less than the cutoff, and if
+            ! it meets one of the two conditions, then add it to the list
             If (rsq < rc_sq .and. (same_condition .or. diff_condition) ) Then
                 inner_count = inner_count + 1
                 dr_values(inner_count) = rsq
                 id_atom1(inner_count) = ihead
                 id_atom2(inner_count) = jhead
             End If
-            
+
             ! Move to the next atom in the linked list
             jhead = list_r2(jhead)
         End Do
