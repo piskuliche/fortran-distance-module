@@ -116,7 +116,13 @@ subroutine cell_list_distance(r1, r2, box, cell_length, rc_sq, dr_values, dr_ato
     
     ! Build cell linked list
     call build_linked_list(r1, nbins, box, head_r1, list_r1)
-    call build_linked_list(r2, nbins, box, head_r2, list_r2)
+    ! Sets r2 to be r1 if same_array is true
+    if (present(same_array) .and. same_array == 1) then
+        head_r2 = head_r1
+        list_r2 = list_r1
+        r2 = r1
+    else
+        call build_linked_list(r2, nbins, box, head_r2, list_r2)
 
     if (present(offset) .and. offset > 0) then
         add_offset = offset
@@ -126,62 +132,30 @@ subroutine cell_list_distance(r1, r2, box, cell_length, rc_sq, dr_values, dr_ato
 
     count = 0 ! Set Count to Zero
     ! Distance Calculation ****************************************************
-    if ( present(same_array) .and. same_array == 1) then
-        ! Array is the Same ***************************************************
-        Do i=1, nbins(1)
-        Do j=1, nbins(2)
-        Do k=1, nbins(3)
-            ! Loop over nearest neighbor cells
-            Do l=-2, 2
-            Do m=-2, 2
-            Do n=-2, 2
-                ! Map the cell indices
-                ii = map(1,i+l+2)
-                jj = map(2,j+m+2)
-                kk = map(3,k+n+2)
-                ! Head of current cell
-                ihead = head_r1(i,j,k) 
-                jhead = head_r2(ii, jj, kk)
-                inner_count = 0
-                call cell_internal_distance(ihead, jhead, list_r1, list_r1, r1, r1, &
-                        box, rc_sq, dr_values, dr_atom1, dr_atom2, inner_count)
-                count = count + inner_count   
-            EndDo !n
-            EndDo !m
-            EndDo !l
-        EndDo !k
-        EndDo !j
-        EndDo !i
-    Else
-        ! Array is Different ****************************************************
-        Do i=1, nbins(1)
-        Do j=1, nbins(2)
-        Do k=1, nbins(3)
-            ! Loop over nearest neighbor cells
-            Do l=-2, 2
-            Do m=-2, 2
-            Do n=-2, 2
-                ! Map the cell indices
-                ii = map(1,i+l+2)
-                jj = map(2,j+m+2)
-                kk = map(3,k+n+2)
-                ! Head of current cells
-                ihead = head_r1(i,j,k) 
-                jhead = head_r2(ii, jj, kk)
-
-                inner_count = 0
-                call cell_internal_distance(ihead, jhead, list_r1, list_r2, r1, r2, &
-                        box, rc_sq, dr_values, dr_atom1, dr_atom2, inner_count)
-                count = count + inner_count  
-
-            EndDo !n
-            EndDo !m
-            EndDo !l
-        EndDo !k
-        EndDo !j
-        EndDo !i
-        ! *********************************************************************
-    EndIf
+    Do i=1, nbins(1)
+    Do j=1, nbins(2)
+    Do k=1, nbins(3)
+        ! Loop over nearest neighbor cells
+        Do l=-2, 2
+        Do m=-2, 2
+        Do n=-2, 2
+            ! Map the cell indices
+            ii = map(1,i+l+2)
+            jj = map(2,j+m+2)
+            kk = map(3,k+n+2)
+            ! Head of current cell
+            ihead = head_r1(i,j,k) 
+            jhead = head_r2(ii, jj, kk)
+            inner_count = 0
+            call cell_internal_distance(ihead, jhead, list_r1, list_r2, r1, r2, &
+                    box, rc_sq, dr_values, dr_atom1, dr_atom2, inner_count, same_array)
+            count = count + inner_count   
+        EndDo !n
+        EndDo !m
+        EndDo !l
+    EndDo !k
+    EndDo !j
+    EndDo !i
     write(*,*) "count", count
     ! *************************************************************************
     ! Deallocate the head arrays
