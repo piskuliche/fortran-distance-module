@@ -1,4 +1,4 @@
-module build_linked_list
+module linked_lists
     ! this module builds a linked list and implements its basic operations
     implicit none
 
@@ -36,6 +36,7 @@ contains
 
     include "build_linked_list.f90"
     include "setup_cell_grid.f90"
+    include "cell_list_distance.f90"
 
 
-end module build_linked_list
+end module linked_lists
