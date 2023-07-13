@@ -70,7 +70,7 @@ contains
         dr_values = 0.0; dr_atom1 = 0; dr_atom2 = 0
         dr_values_naive = 0.0; dr_atom1_naive = 0; dr_atom2_naive = 0
         cell_assign_1 = 0; cell_assign_2 = 0
-
+        write(*,*) "Testing timing comparison"
         do i=1, ntimes
             ! Generate Coordinates ****************************************************
             ! Initialize positions within box
@@ -81,6 +81,7 @@ contains
             call cell_list_distance(r, r, box, cell_length, rc_sq, dr_values, dr_atom1, dr_atom2, same_array=.true.)
             call cpu_time(end_time)
             elapsed_time(1) = elapsed_time(1) + end_time - start_time
+            write(*,*) "Finished loop cell"
             ! Naive Approach **********************************************************
             call cpu_time(start_time)
             call double_loop_distance(r, r, box, rc_sq, dr_values_naive, dr_atom1_naive, dr_atom2_naive &
@@ -88,6 +89,7 @@ contains
             call cpu_time(end_time)
             elapsed_time(2) = elapsed_time(2) + end_time - start_time
         enddo
+        write(*,*) "Timing complete"
         elapsed_time = elapsed_time/ntimes
 
     end subroutine test_timing_comparison
