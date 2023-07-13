@@ -157,7 +157,6 @@ contains
     integer, intent(out) :: inner_count
     ! Optional Arguments
     logical, intent(in), optional :: same_array
-    
 
     ! Local Variables
     real :: rsq
@@ -283,10 +282,12 @@ contains
             call build_linked_list(r2, nbins, box, head_r2, list_r2)
         endif
 
-        if (present(offset) .and. offset > 0) then
-            add_offset = offset
-        else
-            add_offset = 0
+        if (present(offset)) then
+            if (offset > 0) then
+                add_offset = offset
+            else
+                add_offset = 0
+            endif
         endif
 
         count = 0 ! Set Count to Zero
