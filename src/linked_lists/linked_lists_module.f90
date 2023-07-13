@@ -231,12 +231,11 @@ contains
         
         ! Inputs **************************************************************
         real, intent(in) :: rc_sq, cell_length
-        real, dimension(:,:), intent(in) :: r1
+        real, dimension(:,:), intent(in) :: r1, r2
         real, dimension(:), intent(in) :: box
         logical, intent(in), optional :: same_array
         integer, intent(in), optional :: offset
         ! Outputs *************************************************************
-        real, dimension(:,:), intent(inout) :: r2
         real, dimension(:), intent(out) :: dr_values
         integer, dimension(:), intent(out) :: dr_atom1, dr_atom2
         ! Local Variables *****************************************************
@@ -277,7 +276,6 @@ contains
         if (present(same_array) .and. same_array .eqv. .true.) then
             head_r2 = head_r1
             list_r2 = list_r1
-            r2 = r1
         else
             call build_linked_list(r2, nbins, box, head_r2, list_r2)
         endif
