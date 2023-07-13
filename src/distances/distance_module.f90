@@ -118,7 +118,7 @@ contains
     ! **************************************************************************
 
     subroutine double_loop_distance(r1, r2, box, rc_sq &
-        , dr_values, dr_atom1, dr_atom2, cell_assign_1, cell_assign_2, compare_cell, same_array, cell_length)
+        , dr_values, dr_atom1, dr_atom2, cell_assign_1, cell_assign_2, count, same_array, cell_length)
     ! This subroutine calculates the distance between all pairs of atoms in a system
     ! using a double loop.
     !
@@ -143,17 +143,17 @@ contains
         real, intent(in) :: rc_sq
         real, dimension(:,:), intent(in) :: r1, r2 ! Coordinates
         real, dimension(:), intent(in) :: box ! Box dimensions
-        integer, intent(in), optional :: compare_cell ! Flag to compare with cell list method
-        integer, intent(in), optional :: same_array   ! Flag to compare with same array (default 0)
+        logical, intent(in), optional :: same_array   ! Flag to compare with same array (default 0)
         real, intent(in), optional :: cell_length
         ! Outputs *************************************************************
         real, dimension(:), intent(out) :: dr_values
         integer, dimension(:), intent(out) :: dr_atom1, dr_atom2
         integer, dimension(:,:), intent(out) :: cell_assign_1, cell_assign_2
+        integer, intent(out) :: count    ! Number of pairs found
         ! Local Variables *****************************************************
         integer :: i, j, di ! Loop Indices
-        integer :: count    ! Number of pairs found
         real :: rsq         ! Temporary distance squared
+        integer :: jstart
 
 
         real, dimension(3) :: dr_tmp        ! Temporary distance vector
@@ -166,40 +166,28 @@ contains
         cell_assign_1 = 0; cell_assign_2 = 0
 
         count = 0
+
         ! Distance Calculation ****************************************************
-        if (present(same_array) .and. same_array == 1) then
-            ! Array is the Same ***************************************************
-            Do i=1, size(r1,1)
-                Do j=i+1, size(r2,1)
-                    ! Periodic distance calculation
-                    rsq = periodic_distance2(r1(i,:), r2(j,:), box)
-                    ! Distance cutoff & store non-zero elements
-                    If (rsq < rc_sq .and. rsq > 0) Then
-                        count = count + 1
-                        dr_values(count) = rsq
-                        dr_atom1(count) = i
-                        dr_atom2(count) = j
-                    EndIf
-                EndDo
+        Do i=1, size(r1,1)
+            if (present(same_array)) then
+                if (same_array) then
+                    jstart = i+1
+                else
+                    jstart = 1
+                end if
+            end if
+            Do j=jstart, size(r2,1)
+                ! Periodic distance calculation
+                rsq = periodic_distance2(r1(i,:), r2(j,:), box)
+                ! Distance cutoff & store non-zero elements
+                If (rsq < rc_sq .and. rsq > 0) Then
+                    count = count + 1
+                    dr_values(count) = rsq
+                    dr_atom1(count) = i
+                    dr_atom2(count) = j
+                EndIf
             EndDo
-            ! **********************************************************************
-        else
-            ! Array is Different ***************************************************
-            Do i=1, size(r1,1)
-                Do j=1, size(r2,1)
-                    ! Periodic distance calculation
-                    rsq = periodic_distance2(r1(i,:), r2(j,:), box)
-                    ! Distance cutoff & store non-zero elements
-                    If (rsq < rc_sq) Then
-                        count = count + 1
-                        dr_values(count) = rsq
-                        dr_atom1(count) = i
-                        dr_atom2(count) = j
-                    EndIf
-                EndDo
-            EndDo
-            ! **********************************************************************
-        EndIf
+        EndDo
         ! **************************************************************************
         write(*,*) "dcount", count
     end subroutine double_loop_distance
