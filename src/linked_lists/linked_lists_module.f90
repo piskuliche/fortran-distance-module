@@ -196,7 +196,7 @@ contains
 
     end subroutine cell_internal_distance
 
-    subroutine cell_list_distance(r1, r2, box, cell_length, rc_sq, dr_values, dr_atom1, dr_atom2, same_array, offset)
+    subroutine cell_list_distance(r1, r2, box, cell_length, rc_sq, dr_values, dr_atom1, dr_atom2, count, same_array, offset)
     ! This subroutine calculates the distance between all pairs of atoms in a system
     ! using a cell linked list. 
     !
@@ -238,12 +238,13 @@ contains
         ! Outputs *************************************************************
         real, dimension(:), intent(out) :: dr_values
         integer, dimension(:), intent(out) :: dr_atom1, dr_atom2
+        integer, intent(out) :: count
         ! Local Variables *****************************************************
         integer :: i, j, k, l, m, n 
         integer :: ii, jj, kk       
         integer :: di               
         integer :: ihead, jhead     
-        integer :: count, inner_count
+        integer :: inner_count
         integer :: add_offset        
         real :: rsq               
 
