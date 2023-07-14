@@ -1,0 +1,3 @@
+SUBROUTINE Coulomb(r, q)
+
+END SUBROUTINE Coulomb
