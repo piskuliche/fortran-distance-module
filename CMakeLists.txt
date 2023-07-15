@@ -1,8 +1,14 @@
 cmake_minimum_required(VERSION 3.13)
 
-set(CMAKE_Fortran_FLAGS "-O3")
-
 project(fort-dist LANGUAGES Fortran)
+
+find_package(MPI REQUIRED COMPONENTS Fortran)
+message(STATUS "${MPI_Fortran_LIBRARIES}")
+message(STATUS ${MPI_Fortran_INCLUDE_PATH})
+message(STATUS ${MPI_INCLUDE_PATH})
+message(STATUS "test")
+
+set(CMAKE_Fortran_FLAGS "-O3")
 
 set(CMAKE_Fortran_MODULE_DIRECTORY ${CMAKE_BINARY_DIR}/modules)
 
