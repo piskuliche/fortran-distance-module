@@ -25,6 +25,9 @@ contains
     end subroutine coordinate_generator
 
     subroutine compare_dr_values(ll_count, ll_dr, ll_id1, ll_id2, loop_count, loop_dr, loop_id1, loop_id2)
+
+        IMPLICIT NONE
+
         real, dimension(:), intent(in) :: ll_dr, loop_dr
         integer, dimension(:), intent(in) :: ll_id1, ll_id2, loop_id1, loop_id2
         integer, intent(in) :: ll_count, loop_count
@@ -52,6 +55,7 @@ contains
     end subroutine compare_dr_values
 
     subroutine test_timing_comparison(natoms, rc, elapsed_time)
+        use MPI_f08
         use distance_module
         use linked_lists
 
@@ -69,6 +73,7 @@ contains
         ! Local variables ******************************************************
         integer :: i, j, k 
         integer :: ll_count, dl_count
+        integer :: nranks, rank, ierror
 
         real, dimension(3) :: box, rtmp
         real, dimension(natoms,3) :: r
@@ -78,12 +83,20 @@ contains
         real, dimension(natoms*500) :: dr_values_naive, dr_values
         integer, dimension(natoms*500) :: dr_atom1, dr_atom2, dr_atom1_naive, dr_atom2_naive
         integer, dimension(natoms*500,3) :: cell_assign_1, cell_assign_2
+        real, allocatable :: loop_dr (:)
+        integer, allocatable :: loop_id1(:), loop_id2(:)
 
         real :: start_time, end_time
         ! ************************************************************************
-        
+
+        CALL MPI_COMM_SIZE(MPI_COMM_WORLD, nranks, ierror)
+        CALL MPI_COMM_RANK(MPI_COMM_WORLD, rank, ierror)
+
         ! Initialize random number generator
-        call random_seed()
+        IF (rank == 0) THEN
+            CALL random_seed()
+        ENDIF
+
 
         ! Initialize box side lengths
         box(1) = 103
@@ -102,30 +115,47 @@ contains
         do i=1, ntimes
             ! Generate Coordinates ****************************************************
             ! Initialize positions within box
-            call coordinate_generator(natoms, box, r)
-            
-            ! Cell-List Approach ******************************************************
-            call cpu_time(start_time)
+            IF (rank == 0) THEN
+                CALL coordinate_generator(natoms, box, r)
+                CALL cpu_time(start_time)
+            ENDIF
+            CALL MPI_BCAST(r, size(r), MPI_INTEGER, 0, MPI_COMM_WORLD, ierror)
 
-            call cell_list_distance(r, r, box, cell_length, rc_sq, dr_values, dr_atom1, dr_atom2, ll_count, same_array=.true.)
+            CALL MPI_BARRIER(MPI_COMM_WORLD, ierror)
 
-            call cpu_time(end_time)
-            elapsed_time(1) = elapsed_time(1) + end_time - start_time
-            write(*,*) "Finished loop cell"
+            CALL cell_list_distance(r, r, box, cell_length, rc_sq, dr_values, dr_atom1, dr_atom2, ll_count, same_array=.true.)
+
+            IF (rank == 0) THEN
+                CALL cpu_time(end_time)
+                elapsed_time(1) = elapsed_time(1) + end_time - start_time
+                write(*,*) "Finished Cell-List Loop"
+            ENDIF
             ! Naive Approach **********************************************************
-            call cpu_time(start_time)
+            IF (rank == 0) THEN
+                CALL cpu_time(start_time)
+            ENDIF
 
-            call double_loop_distance(r, r, box, rc_sq, dr_values_naive, dr_atom1_naive, dr_atom2_naive &
+            CALL MPI_BARRIER(MPI_COMM_WORLD, ierror)
+            CALL double_loop_distance(r, r, box, rc_sq, loop_dr, loop_id1, loop_id2 &
                             , cell_assign_1, cell_assign_2, dl_count, same_array=.true., cell_length=cell_length)
 
-            call cpu_time(end_time)
-            elapsed_time(2) = elapsed_time(2) + end_time - start_time
-
-            call compare_dr_values(ll_count, dr_values, dr_atom1, dr_atom2, &
-                         dl_count, dr_values_naive, dr_atom1_naive, dr_atom2_naive)
+            IF (rank == 0) THEN 
+                call cpu_time(end_time)
+                elapsed_time(2) = elapsed_time(2) + end_time - start_time
+            ENDIF
+            
+            CALL MPI_BARRIER(MPI_COMM_WORLD, ierror)
+            !CALL compare_dr_values(ll_count, dr_values, dr_atom1, dr_atom2, &
+            !             dl_count, loop_dr, loop_id1, loop_id2)
+            CALL MPI_BARRIER(MPI_COMM_WORLD, ierror)
+            ! Cleanup
+            IF (ALLOCATED(loop_dr)) DEALLOCATE(loop_dr)
+            IF (ALLOCATED(loop_id1)) DEALLOCATE(loop_id1)
+            IF (ALLOCATED(loop_id2)) DEALLOCATE(loop_id2)
         enddo
         write(*,*) "Timing complete"
         elapsed_time = elapsed_time/ntimes
+
 
     end subroutine test_timing_comparison
 
