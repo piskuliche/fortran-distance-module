@@ -31,12 +31,12 @@ program distance_calculation
 
     elapsed_time = 0.0
     CALL MPI_BARRIER(MPI_COMM_WORLD, ierror)
-    CALL test_timing_comparison(20000, rc, elapsed_time)
+    CALL test_timing_comparison(50000, rc, elapsed_time)
     IF ( rank == 0) THEN
-        WRITE(*,*) 20000, " atoms"
+        WRITE(*,*) 50000, " atoms"
         WRITE(*,*) "Elapsed time cell-list: ", elapsed_time(1), " seconds"
         WRITE(*,*) "Elapsed time double loop: ", elapsed_time(2), " seconds"
-        WRITE(15,*) 20000, elapsed_time(1), elapsed_time(2)
+        WRITE(15,*) 50000, elapsed_time(1), elapsed_time(2)
     ENDIF
 
     CLOSE(15)
