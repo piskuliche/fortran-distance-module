@@ -109,15 +109,15 @@ contains
     theta = acos(dot_product(dr12(1:3), dr23(1:3)))
 
     end function angle_between_points
-    ! **************************************************************************
 
+    ! **************************************************************************
 
     ! **************************************************************************
     ! Subroutines **************************************************************
     ! **************************************************************************
 
     subroutine double_loop_distance(r1, r2, box, rc_sq &
-        , dists, atom1, atom2, cell_assign_1, cell_assign_2, count, same_array, cell_length)
+        , dists, atom1, atom2, cell_assign_1, cell_assign_2, count, same_array, cell_length, load_balance)
     ! This subroutine calculates the distance between all pairs of atoms in a system
     ! using a double loop.
     !
@@ -145,6 +145,7 @@ contains
         REAL, DIMENSION(:), INTENT(in) :: box ! Box dimensions
         logical, INTENT(in), optional :: same_array   ! Flag to compare with same array (default 0)
         REAL, INTENT(in), optional :: cell_length
+        LOGICAL, INTENT(inout), optional :: load_balance
         ! Outputs *************************************************************
         REAL, ALLOCATABLE, INTENT(out) :: dists(:)
         INTEGER, ALLOCATABLE, INTENT(out) :: atom1(:), atom2(:)
@@ -155,7 +156,7 @@ contains
         REAL :: rsq         ! Temporary distance squared
         INTEGER :: jstart
         INTEGER :: ierror, nranks, rank
-        INTEGER :: istart, istop, ncoords, nper
+        INTEGER :: istart, istop, ncoords, nper, ncalc
         INTEGER :: dr_count
 
 
@@ -164,7 +165,9 @@ contains
 
         REAL, ALLOCATABLE :: dr(:), tmpdr(:) ! TEMPORARY Distance
         INTEGER, ALLOCATABLE :: id1(:), id2(:), tmp1(:), tmp2(:)
-        INTEGER, ALLOCATABLE :: counts(:), displs(:)
+        INTEGER, ALLOCATABLE :: counts(:), displs(:), ifinishes(:), istarts(:)
+
+        INTEGER :: ncalcs, iprev
         ! ************************************************************************
         CALL MPI_COMM_SIZE(MPI_COMM_WORLD, nranks, ierror)
         CALL MPI_COMM_RANK(MPI_COMM_WORLD, rank, ierror)
@@ -181,13 +184,45 @@ contains
         IF ( .NOT. ALLOCATED(dr) ) THEN
             allocate(dr(1000)); allocate(id1(1000)); allocate(id2(1000))
         ENDIF
+        
+        ALLOCATE(ifinishes(nranks))
+        ALLOCATE(istarts(nranks))
+
 
         ! Get the number of coordinates of r1
         ncoords = size(r1, 1)
         ! Calculate the number of atoms per proc
         nper = CEILING(REAL(ncoords/nranks))
-        istart = 1 + rank*nper
-        istop = MIN((rank+1)*nper, ncoords)
+        ! Only load balance if size of array is the same
+        IF (ncoords /= size(r2,1)) load_balance=.false.
+
+        ! Calculate the start and stop indices for each rank
+        ! ********** Load balancing ************************************************
+        if (load_balance) THEN
+            nper = ncoords*(ncoords-1)/(2*nranks)
+            write(*,*) ncoords, nranks, nper
+            DO i=1, nranks
+                IF (i == 1) THEN
+                    iprev = 1
+                ELSE
+                    iprev = ifinishes(i-1)+1
+                END IF
+                write(*,*) rank, iprev, FLOOR(1 + SQRT(1.0 + 4.0*(2*nper + iprev*(iprev-1)))/2.0), nper
+                istarts(i) = iprev
+                ifinishes(i) = FLOOR(1 + SQRT(1.0 + 4.0*(2*nper + iprev*(iprev-1)))/2.0)
+                ! Set the rank start and stop
+                IF (rank == i - 1) THEN
+                    istart = MAX(1,ncoords-CEILING(REAL(ifinishes(i)))+1)
+                    istop = ncoords-istarts(i)+1
+                ENDIF
+            END DO    
+        ELSE
+            istart = 1 + rank*nper
+            istop = MIN((rank+1)*nper, ncoords)
+        END IF
+        ! *************************************************************************
+
+        write(*,*) ncoords
         write(*,*) "Rank ", rank, " is calculating distances ", istart, " to ", istop
 
         ! Distance Calculation ****************************************************
@@ -201,13 +236,16 @@ contains
                     jstart = 1
                 end if
             end if
+
             Do j=jstart, size(r2,1)
                 ! Periodic distance calculation
                 rsq = periodic_distance2(r1(i,:), r2(j,:), box)
                 ! Distance cutoff & store non-zero elements
                 If (rsq < rc_sq) Then
                     dr_count = dr_count + 1
-
+                    
+                    ! This code does dynamics reallocation if needed to increase the size of the arrays
+                    ! This could eventually be made a subroutine - but haven't done that yet.
                     IF (dr_count > size(dr)) THEN
                         WRITE(*,*) "Rank ", rank, " is reallocating arrays"
                         ! Note this block reallocates the arrays to bigger size if needed.
@@ -221,6 +259,7 @@ contains
                         id2(1:size(tmp2)) = tmp2
                         deallocate(tmp2); deallocate(tmp1); deallocate(tmpdr)
                     END IF
+                    ! End Dynamic Reallocation
 
                     dr(dr_count) = rsq
                     id1(dr_count) = i
@@ -241,8 +280,8 @@ contains
             DO i=2, nranks
                 displs(i) = sum(counts(1:i-1))
             END DO
-            write(*,*) counts(:)
-            write(*,*) displs(:)
+            !write(*,*) counts(:)
+            !write(*,*) displs(:)
         END IF
 
         CALL MPI_GATHERV(dr, dr_count, MPI_REAL, dists, counts, displs, MPI_REAL, 0, MPI_COMM_WORLD, ierror)
@@ -254,6 +293,8 @@ contains
         deallocate(dr)
         deallocate(id1)
         deallocate(id2)
+        deallocate(ifinishes)
+        deallocate(istarts)
         DEALLOCATE(counts, displs)
     end subroutine double_loop_distance
 
