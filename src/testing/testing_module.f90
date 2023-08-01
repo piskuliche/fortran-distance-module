@@ -86,7 +86,12 @@ contains
         real, allocatable :: loop_dr (:)
         integer, allocatable :: loop_id1(:), loop_id2(:)
 
+        real, allocatable :: ll_dr(:)
+        integer, allocatable :: ll_id1(:), ll_id2(:)
+
         real :: start_time, end_time
+
+        logical :: load_balance
         ! ************************************************************************
 
         CALL MPI_COMM_SIZE(MPI_COMM_WORLD, nranks, ierror)
@@ -123,7 +128,7 @@ contains
 
             CALL MPI_BARRIER(MPI_COMM_WORLD, ierror)
 
-            CALL cell_list_distance(r, r, box, cell_length, rc_sq, dr_values, dr_atom1, dr_atom2, ll_count, same_array=.true.)
+            CALL cell_list_distance(r, r, box, cell_length, rc_sq, ll_dr, ll_id1, ll_id2, ll_count, same_array=.true.)
 
             IF (rank == 0) THEN
                 CALL cpu_time(end_time)
@@ -136,8 +141,10 @@ contains
             ENDIF
 
             CALL MPI_BARRIER(MPI_COMM_WORLD, ierror)
+            load_balance = .true.
             CALL double_loop_distance(r, r, box, rc_sq, loop_dr, loop_id1, loop_id2 &
-                            , cell_assign_1, cell_assign_2, dl_count, same_array=.true., cell_length=cell_length)
+                            , cell_assign_1, cell_assign_2, dl_count, same_array=.true. &
+                            , cell_length=cell_length, load_balance=load_balance)
 
             IF (rank == 0) THEN 
                 call cpu_time(end_time)
