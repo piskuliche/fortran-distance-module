@@ -444,6 +444,8 @@ contains
 
         ! (3) Gather the data from each rank into the final output arrays
         CALL MPI_GATHERV(dr, rank_count, MPI_REAL, dists, counts, displs, MPI_REAL, 0, MPI_COMM_WORLD, ierror)
+        call MPI_GATHERV(id1, rank_count, MPI_INTEGER, atom1, counts, displs, MPI_INTEGER, 0, MPI_COMM_WORLD, ierror)
+        call MPI_GATHERV(id2, rank_count, MPI_INTEGER, atom2, counts, displs, MPI_INTEGER, 0, MPI_COMM_WORLD, ierror)
 
         IF (rank == 0) THEN
             write(*,*) "count", count
