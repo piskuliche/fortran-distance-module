@@ -2,6 +2,8 @@ module testing
     implicit none
 
 contains
+    
+    include "csr_writer.f90"
 
     subroutine coordinate_generator(natoms, box, r)
         implicit none
@@ -61,7 +63,7 @@ contains
 
         implicit none
 
-        integer, parameter :: ntimes = 5
+        integer, parameter :: ntimes = 1
 
         ! Input variables ******************************************************
         integer, intent(in) :: natoms
@@ -80,9 +82,6 @@ contains
 
         real :: cell_length, rc_sq
 
-        real, dimension(natoms*500) :: dr_values_naive, dr_values
-        integer, dimension(natoms*500) :: dr_atom1, dr_atom2, dr_atom1_naive, dr_atom2_naive
-        integer, dimension(natoms*500,3) :: cell_assign_1, cell_assign_2
         real, allocatable :: loop_dr (:)
         integer, allocatable :: loop_id1(:), loop_id2(:)
 
@@ -113,21 +112,32 @@ contains
         rc_sq = rc**.2
 
         elapsed_time = 0.0
-        dr_values = 0.0; dr_atom1 = 0; dr_atom2 = 0
-        dr_values_naive = 0.0; dr_atom1_naive = 0; dr_atom2_naive = 0
-        cell_assign_1 = 0; cell_assign_2 = 0
         write(*,*) "Testing timing comparison"
         do i=1, ntimes
+            ! For each times there are a few steps that happen.
+            ! (1) Generate coordinates
+            ! (2) Initialize MPI
+            ! (3) Run cell list calculation 
+            ! (4) Run double loop calculation
             ! Generate Coordinates ****************************************************
             ! Initialize positions within box
+            write(*,*) "Generating Coordinates"
             IF (rank == 0) THEN
                 CALL coordinate_generator(natoms, box, r)
                 CALL cpu_time(start_time)
             ENDIF
+            write(*,*) "Finished Generating Coordinates"
+
+            ! *** MPI **************************************************************
+            ! (2) Intialize MPI
             CALL MPI_BCAST(r, size(r), MPI_INTEGER, 0, MPI_COMM_WORLD, ierror)
 
             CALL MPI_BARRIER(MPI_COMM_WORLD, ierror)
 
+            ! (3) Cell List distance calculation
+            if (rank == 0) THEN
+                write(*,*) "Starting Cell-List Loop"
+            END IF
             CALL cell_list_distance(r, r, box, cell_length, rc_sq, ll_dr, ll_id1, ll_id2, ll_count, same_array=.true.)
 
             IF (rank == 0) THEN
@@ -135,23 +145,38 @@ contains
                 elapsed_time(1) = elapsed_time(1) + end_time - start_time
                 write(*,*) "Finished Cell-List Loop"
             ENDIF
-            ! Naive Approach **********************************************************
+            ! ***********************************************************************
+
+            ! Double loop Approach **********************************************************
             IF (rank == 0) THEN
                 CALL cpu_time(start_time)
             ENDIF
 
             CALL MPI_BARRIER(MPI_COMM_WORLD, ierror)
+
+            ! (4) Double loop distance calculation
             load_balance = .true.
             CALL double_loop_distance(r, r, box, rc_sq, loop_dr, loop_id1, loop_id2 &
-                            , cell_assign_1, cell_assign_2, dl_count, same_array=.true. &
-                            , cell_length=cell_length, load_balance=load_balance)
+                    , dl_count, same_array=.true. , cell_length=cell_length &
+                    , load_balance=load_balance, verbose=.true.)
 
             IF (rank == 0) THEN 
                 call cpu_time(end_time)
                 elapsed_time(2) = elapsed_time(2) + end_time - start_time
             ENDIF
+
             
             CALL MPI_BARRIER(MPI_COMM_WORLD, ierror)
+
+            ! WRITE FILES
+            IF (rank == 0) THEN
+                call CSR_INTEGER_WRITER(21, loop_id1, "loop_id1.dat")
+                call CSR_INTEGER_WRITER(21, loop_id1, "loop_id2.dat")
+                call CSR_REAL_WRITER(21, loop_dr, "loop_dr.dat")
+                call CSR_INTEGER_WRITER(21, ll_id1, "ll_id1.dat")
+                call CSR_INTEGER_WRITER(21, ll_id1, "ll_id2.dat")
+                call CSR_REAL_WRITER(21, ll_dr, "ll_dr.dat")
+            END IF
             !CALL compare_dr_values(ll_count, dr_values, dr_atom1, dr_atom2, &
             !             dl_count, loop_dr, loop_id1, loop_id2)
             CALL MPI_BARRIER(MPI_COMM_WORLD, ierror)
@@ -159,6 +184,9 @@ contains
             IF (ALLOCATED(loop_dr)) DEALLOCATE(loop_dr)
             IF (ALLOCATED(loop_id1)) DEALLOCATE(loop_id1)
             IF (ALLOCATED(loop_id2)) DEALLOCATE(loop_id2)
+            IF (ALLOCATED(ll_dr)) DEALLOCATE(ll_dr)
+            IF (ALLOCATED(ll_id1)) DEALLOCATE(ll_id1)
+            IF (ALLOCATED(ll_id2)) DEALLOCATE(ll_id2)
         enddo
         write(*,*) "Timing complete"
         elapsed_time = elapsed_time/ntimes
