@@ -117,7 +117,8 @@ contains
     ! **************************************************************************
 
     subroutine double_loop_distance(r1, r2, box, rc_sq &
-        , dists, atom1, atom2, cell_assign_1, cell_assign_2, count, same_array, cell_length, load_balance)
+        , dists, atom1, atom2, count, same_array, cell_length, load_balance &
+        , verbose)
     ! This subroutine calculates the distance between all pairs of atoms in a system
     ! using a double loop.
     !
@@ -146,18 +147,20 @@ contains
         logical, INTENT(in), optional :: same_array   ! Flag to compare with same array (default 0)
         REAL, INTENT(in), optional :: cell_length
         LOGICAL, INTENT(inout), optional :: load_balance
+        LOGICAL, INTENT(in), optional :: verbose
         ! Outputs *************************************************************
         REAL, ALLOCATABLE, INTENT(out) :: dists(:)
         INTEGER, ALLOCATABLE, INTENT(out) :: atom1(:), atom2(:)
-        INTEGER, DIMENSION(:,:), INTENT(out) :: cell_assign_1, cell_assign_2
         INTEGER, INTENT(out) :: count    ! Number of pairs found
         ! Local Variables *****************************************************
         INTEGER :: i, j, di ! Loop Indices
         REAL :: rsq         ! Temporary distance squared
         INTEGER :: jstart
         INTEGER :: ierror, nranks, rank
-        INTEGER :: istart, istop, ncoords, nper, ncalc
+        INTEGER :: istart, istop,  ncalc
         INTEGER :: dr_count
+
+        INTEGER(kind=8) :: nper, ncoords
 
 
         REAL, DIMENSION(3) :: dr_tmp        ! Temporary distance vector
@@ -175,10 +178,6 @@ contains
         ALLOCATE(counts(nranks))
         ALLOCATE(displs(nranks))
 
-        ! Initialize the cell_assign arrays
-        cell_assign_1 = 0; cell_assign_2 = 0
-
-        write(*,*) "Rank ", rank, " made it to the double loop"
 
         ! Allocate initial block for arrays
         IF ( .NOT. ALLOCATED(dr) ) THEN
@@ -193,21 +192,42 @@ contains
         ncoords = size(r1, 1)
         ! Calculate the number of atoms per proc
         nper = CEILING(REAL(ncoords/nranks))
-        ! Only load balance if size of array is the same
-        IF (ncoords /= size(r2,1)) load_balance=.false.
+        ! Only load balance if r1 and r2 are the same
+        IF ( present(same_array) .and. same_array .eqv. .false.) load_balance=.false.
+
 
         ! Calculate the start and stop indices for each rank
         ! ********** Load balancing ************************************************
+        ! This does load balancing for the double loop by assuming that 
+        ! if r1 and r2 are the same, then only the upper traingle is needed.
+        ! For instance, take the following matrix
+        !       (1,1) (2,1) (3,1) (4,1)
+        !       (1,2) (2,2) (3,2) (4,2)
+        !       (1,3) (2,3) (3,3) (4,3)
+        !       (1,4) (2,4) (3,4) (4,4)
+        !
+        !  Now: note that if r1 and r2 are the same, then (1,1) (2,2) are zero, and (2,1) = (1,2)
+        !  So, we only need to calculate the upper triangle.
+        ! 
         if (load_balance) THEN
+            if (rank == 0) THEN
+                write(*,*) "Load balancing has been selected"
+            write(*,*) nper
+            END IF 
+            !write(*,*) ncoords*(ncoords-1), ncoords*(ncoords-1)/(2*nranks)
+            ! Calculate the number of calculations per rank
             nper = ncoords*(ncoords-1)/(2*nranks)
-            write(*,*) ncoords, nranks, nper
+            ! Write verbose info to the screen
+            IF (verbose) THEN 
+                write(*,*) "rank load", ncoords, nranks, nper
+            END IF
             DO i=1, nranks
                 IF (i == 1) THEN
                     iprev = 1
                 ELSE
                     iprev = ifinishes(i-1)+1
                 END IF
-                write(*,*) rank, iprev, FLOOR(1 + SQRT(1.0 + 4.0*(2*nper + iprev*(iprev-1)))/2.0), nper
+                !write(*,*) rank, iprev, FLOOR(1 + SQRT(1.0 + 4.0*(2*nper + iprev*(iprev-1)))/2.0), nper
                 istarts(i) = iprev
                 ifinishes(i) = FLOOR(1 + SQRT(1.0 + 4.0*(2*nper + iprev*(iprev-1)))/2.0)
                 ! Set the rank start and stop
@@ -222,9 +242,11 @@ contains
         END IF
         ! *************************************************************************
 
-        write(*,*) ncoords
-        write(*,*) "Rank ", rank, " is calculating distances ", istart, " to ", istop
-
+        IF (verbose) THEN
+            write(*,*) "Rank ", rank, " made it to the double loop"
+            write(*,*) "Rank ", rank, " is calculating distances ", istart, " to ", istop
+        END IF
+        
         ! Distance Calculation ****************************************************
         count = 0
         dr_count = 0
@@ -247,7 +269,11 @@ contains
                     ! This code does dynamics reallocation if needed to increase the size of the arrays
                     ! This could eventually be made a subroutine - but haven't done that yet.
                     IF (dr_count > size(dr)) THEN
-                        WRITE(*,*) "Rank ", rank, " is reallocating arrays"
+                        ! Write out reallocations
+                        IF (verbose) THEN
+                            WRITE(*,*) "Rank ", rank, " is reallocating arrays"
+                        END IF 
+
                         ! Note this block reallocates the arrays to bigger size if needed.
                         allocate(tmpdr(size(dr))); allocate(tmp1(size(id1))); allocate(tmp2(size(id2)))
                         tmp1 = id1; tmp2 = id2; tmpdr = dr
@@ -267,8 +293,13 @@ contains
                 EndIf
             EndDo
         EndDo
-        write(*,*) "Rank ", rank, " has ", dr_count, " distances"
 
+        ! Write to the screen
+        IF (verbose) THEN
+            write(*,*) "Rank ", rank, " has ", dr_count, " distances"
+        END IF
+        
+        ! *** MPI *** *************************************************************
         CALL MPI_REDUCE(dr_count, count, 1, MPI_INTEGER, MPI_SUM, 0, MPI_COMM_WORLD, ierror)
 
         allocate(dists(count)); allocate(atom1(count)); allocate(atom2(count))
@@ -285,11 +316,14 @@ contains
         END IF
 
         CALL MPI_GATHERV(dr, dr_count, MPI_REAL, dists, counts, displs, MPI_REAL, 0, MPI_COMM_WORLD, ierror)
-
+        CALL MPI_GATHERV(id1, dr_count, MPI_INTEGER, atom1, counts, displs, MPI_INTEGER, 0, MPI_COMM_WORLD, ierror)
+        CALL MPI_GATHERV(id2, dr_count, MPI_INTEGER, atom2, counts, displs, MPI_INTEGER, 0, MPI_COMM_WORLD, ierror)
         ! **************************************************************************
-        IF (rank == 0) THEN 
-            write(*,*) "dcount", count
+        IF (rank == 0 .AND. verbose) THEN 
+            write(*,*) "double loop distances:", count
         ENDIF
+
+
         deallocate(dr)
         deallocate(id1)
         deallocate(id2)
