@@ -84,8 +84,14 @@ subroutine cell_list_distance(r1, r2, box, cell_length, rc_sq, dists, atom1, ato
 
         ! Allocate the MPI arrays for counts and displacements
         ALLOCATE(counts(nranks), displs(nranks))
-
-
+        
+        IF (rank == 0) THEN
+            write(*,*) "Cell-List-Distance called with the following parameters"
+            write(*,*) "cell_length: ", cell_length
+            write(*,*) "rc_sq: ", rc_sq
+            write(*,*) "box: ", box
+        END IF
+        
         ! Set up the grid for the distance calculation
         ! Also sets the mpi_nbins_start and stop variables that define which bins the rank is responsible for.
         call setup_cell_grid(cell_length, box, nbins, map, mpi_nbins_start, mpi_nbins_stop)
@@ -191,6 +197,7 @@ subroutine cell_list_distance(r1, r2, box, cell_length, rc_sq, dists, atom1, ato
         EndDo !k
         EndDo !j
         EndDo !i
+        write(*,*) "Rank", rank, " has ", rank_count, " counts"
 
 
 
@@ -220,8 +227,8 @@ subroutine cell_list_distance(r1, r2, box, cell_length, rc_sq, dists, atom1, ato
 
         ! (3) Gather the data from each rank into the final output arrays
         CALL MPI_GATHERV(dr, rank_count, MPI_REAL, dists, counts, displs, MPI_REAL, 0, MPI_COMM_WORLD, ierror)
-        call MPI_GATHERV(id1, rank_count, MPI_INTEGER, atom1, counts, displs, MPI_INTEGER, 0, MPI_COMM_WORLD, ierror)
-        call MPI_GATHERV(id2, rank_count, MPI_INTEGER, atom2, counts, displs, MPI_INTEGER, 0, MPI_COMM_WORLD, ierror)
+        CALL MPI_GATHERV(id1, rank_count, MPI_INTEGER, atom1, counts, displs, MPI_INTEGER, 0, MPI_COMM_WORLD, ierror)
+        CALL MPI_GATHERV(id2, rank_count, MPI_INTEGER, atom2, counts, displs, MPI_INTEGER, 0, MPI_COMM_WORLD, ierror)
 
         IF (rank == 0) THEN
             write(*,*) "count", count
