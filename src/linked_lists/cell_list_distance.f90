@@ -151,9 +151,6 @@ subroutine cell_list_distance(r1, r2, box, cell_length, rc_sq, dists, atom1, ato
                 ii = map(1,i+l+2)
                 jj = map(2,j+m+2)
                 kk = map(3,k+n+2)
-                if ( i == 1 .and. j == 1 .and. k==33 ) THEN
-                    write(*,*) "rank", rank, "i", i, "j", j, "k", k, "ii", ii, "jj", jj, "kk", kk
-                END IF
                 ! Head of current cell
                 ihead = head_r1(i,j,k) 
                 jhead = head_r2(ii, jj, kk)
