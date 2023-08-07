@@ -109,7 +109,10 @@ contains
 
         ! Initialize cell length and rc_sq
         cell_length = rc/2.0
-        rc_sq = rc**.2
+        rc_sq = rc**2.0
+        IF (rank == 0) THEN
+            write(*,*) cell_length, rc, rc_sq
+        END IF
 
         elapsed_time = 0.0
         write(*,*) "Testing timing comparison"
@@ -164,17 +167,16 @@ contains
                 call cpu_time(end_time)
                 elapsed_time(2) = elapsed_time(2) + end_time - start_time
             ENDIF
-
             
             CALL MPI_BARRIER(MPI_COMM_WORLD, ierror)
 
             ! WRITE FILES
             IF (rank == 0) THEN
                 call CSR_INTEGER_WRITER(21, loop_id1, "loop_id1.dat")
-                call CSR_INTEGER_WRITER(21, loop_id1, "loop_id2.dat")
+                call CSR_INTEGER_WRITER(21, loop_id2, "loop_id2.dat")
                 call CSR_REAL_WRITER(21, loop_dr, "loop_dr.dat")
                 call CSR_INTEGER_WRITER(21, ll_id1, "ll_id1.dat")
-                call CSR_INTEGER_WRITER(21, ll_id1, "ll_id2.dat")
+                call CSR_INTEGER_WRITER(21, ll_id2, "ll_id2.dat")
                 call CSR_REAL_WRITER(21, ll_dr, "ll_dr.dat")
             END IF
             !CALL compare_dr_values(ll_count, dr_values, dr_atom1, dr_atom2, &
