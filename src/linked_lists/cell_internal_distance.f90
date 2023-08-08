@@ -29,7 +29,7 @@ subroutine cell_internal_distance(ihead_init, jhead_init, ll_1, ll_2, r1, r2, &
 
     ihead   = ihead_init
     Do While (ihead /= 0)
-        jhead   = jhead_init
+        jhead  = jhead_init
 
         Do While (jhead /= 0) ! Might need to add somehting here
             ! Calculate the distance between the atoms
