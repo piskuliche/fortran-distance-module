@@ -41,7 +41,7 @@ subroutine setup_cell_grid(cell_length, box, nbins, map, mpi_nbins_start, mpi_nb
         
         do i=1,3
             ! Calculate the number of bins in each direction
-            nbins(i) = max(1, int(box(i)/cell_length))
+            nbins(i) = max(1, FLOOR(box(i)/cell_length))
 
             ! Check to make sure the number of bins is not too large
             IF ( nbins(i) > max_bins ) THEN
@@ -70,10 +70,9 @@ subroutine setup_cell_grid(cell_length, box, nbins, map, mpi_nbins_start, mpi_nb
         mpi_nbins_start = 0
         mpi_nbins_stop = 0
         DO i=1, 3
-            bins_per_rank(i) = nbins(i) / nranks
+            bins_per_rank(i) = INT(CEILING(nbins(i) / REAL(nranks)))
             mpi_nbins_start(i) = max(rank * bins_per_rank(i) + 1, 1) ! Make sure we don't go below 1
             mpi_nbins_stop(i) =  min((rank + 1) * bins_per_rank(i),nbins(i)) ! Make sure we don't go above nbins
-            write(*,*) "Rank ", rank, " has bins ", mpi_nbins_start(i), " to ", mpi_nbins_stop(i), " for dimension ", i
         END DO
 
     end subroutine setup_cell_grid
