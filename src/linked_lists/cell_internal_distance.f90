@@ -54,5 +54,4 @@ subroutine cell_internal_distance(ihead_init, jhead_init, ll_1, ll_2, r1, r2, &
 
         ihead = ll_1(ihead)
     End Do
-
     end subroutine cell_internal_distance
