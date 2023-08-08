@@ -103,13 +103,14 @@ contains
 
 
         ! Initialize box side lengths
-        box(1) = 103
-        box(2) = 102
-        box(3) = 101
+        box(1) = 10
+        box(2) = 10
+        box(3) = 10
 
         ! Initialize cell length and rc_sq
         cell_length = rc/2.0
         rc_sq = rc**2.0
+
         IF (rank == 0) THEN
             write(*,*) cell_length, rc, rc_sq
         END IF
@@ -124,6 +125,8 @@ contains
             ! (4) Run double loop calculation
             ! Generate Coordinates ****************************************************
             ! Initialize positions within box
+            ll_count = 0
+            dl_count = 0
             write(*,*) "Generating Coordinates"
             IF (rank == 0) THEN
                 CALL coordinate_generator(natoms, box, r)
