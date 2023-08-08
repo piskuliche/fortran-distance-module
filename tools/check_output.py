@@ -55,6 +55,7 @@ def check_dists(filestr, a, b):
     print("max", max(drs), a[mloc], b[mloc])
     mloc = np.where(drs == min(drs))[0][0]
     print("min", min(drs), a[mloc], b[mloc])
+    print("unique", len(np.unique(drs)))
 
 
 if __name__ == "__main__":
