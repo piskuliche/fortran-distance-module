@@ -23,7 +23,9 @@
         arr = 0
         Do i=1,3
             ! Assign bin index, making sure it is within the bounds of the grid
-            arr(i) = min(nbins(i), max(1, int(coord(i)/box(i)*nbins(i))))
+            arr(i) = min(nbins(i), max(1, CEILING(coord(i)/box(i)*nbins(i))))
+
         EndDo
+        write(*,*) coord(1), arr(1)
 
     end function assign_to_grid
