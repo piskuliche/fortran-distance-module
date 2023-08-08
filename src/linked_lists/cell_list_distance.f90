@@ -86,19 +86,26 @@ subroutine cell_list_distance(r1, r2, box, cell_length, rc_sq, dists, atom1, ato
         ALLOCATE(counts(nranks), displs(nranks))
         
         IF (rank == 0) THEN
+            write(*,*) "*******************************************************"
             write(*,*) "Cell-List-Distance called with the following parameters"
             write(*,*) "cell_length: ", cell_length
             write(*,*) "rc_sq: ", rc_sq
             write(*,*) "box: ", box
+            write(*,*) "*******************************************************"
         END IF
         
+        CALL MPI_BARRIER(MPI_COMM_WORLD, ierror)
         ! Set up the grid for the distance calculation
         ! Also sets the mpi_nbins_start and stop variables that define which bins the rank is responsible for.
         call setup_cell_grid(cell_length, box, nbins, map, mpi_nbins_start, mpi_nbins_stop)
 
+        
+
         ! Allocate the head arrays
         allocate(head_r1(nbins(1), nbins(2), nbins(3)))
         allocate(head_r2(nbins(1), nbins(2), nbins(3)))
+
+        write(*,*) "nbins:", nbins(1), nbins(2), nbins(3)
         
         ! Allocates the rank data arrays and resizes them if necessary
         if (.NOT. ALLOCATED (dr) )  THEN
@@ -117,6 +124,7 @@ subroutine cell_list_distance(r1, r2, box, cell_length, rc_sq, dists, atom1, ato
         END IF 
         ! Build cell linked list
         call build_linked_list(r1, nbins, box, head_r1, list_r1)
+
         ! Sets r2 to be r1 IF same_array is true, or calls linked list again. 
         IF (present(same_array) .and. (same_array .eqv. .true.)) THEN
             head_r2 = head_r1
@@ -158,7 +166,7 @@ subroutine cell_list_distance(r1, r2, box, cell_length, rc_sq, dists, atom1, ato
                 jj = map(2,j+m+2)
                 kk = map(3,k+n+2)
                 ! Head of current cell
-                ihead = head_r1(i,j,k) 
+                ihead = head_r1(i,  j,  k ) 
                 jhead = head_r2(ii, jj, kk)
                 inner_count = 0
                 
@@ -231,7 +239,8 @@ subroutine cell_list_distance(r1, r2, box, cell_length, rc_sq, dists, atom1, ato
         CALL MPI_GATHERV(id2, rank_count, MPI_INTEGER, atom2, counts, displs, MPI_INTEGER, 0, MPI_COMM_WORLD, ierror)
 
         IF (rank == 0) THEN
-            write(*,*) "count", count
+            write(*,*) "Cell List Distances: ", count
+            write(*,*) "********************************"
         END IF
         ! *************************************************************************
         ! Deallocate the head arrays
