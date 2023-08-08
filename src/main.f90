@@ -26,17 +26,17 @@ program distance_calculation
     CALL MPI_COMM_RANK(MPI_COMM_WORLD, rank, ierror)
 
     IF (rank == 0) OPEN(15, file="rc_3.0.dat")
-    rc = 3.0
+    rc = 2
 
 
     elapsed_time = 0.0
     CALL MPI_BARRIER(MPI_COMM_WORLD, ierror)
-    CALL test_timing_comparison(5000, rc, elapsed_time)
+    CALL test_timing_comparison(20, rc, elapsed_time)
     IF ( rank == 0) THEN
-        WRITE(*,*) 5000, " atoms"
+        WRITE(*,*) 20, " atoms"
         WRITE(*,*) "Elapsed time cell-list: ", elapsed_time(1), " seconds"
         WRITE(*,*) "Elapsed time double loop: ", elapsed_time(2), " seconds"
-        WRITE(15,*) 5000, elapsed_time(1), elapsed_time(2)
+        WRITE(15,*) 20, elapsed_time(1), elapsed_time(2)
     ENDIF
 
     CLOSE(15)
