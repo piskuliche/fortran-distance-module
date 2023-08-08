@@ -30,6 +30,15 @@ subroutine build_linked_list(r, nbins, box, head, list)
         head=0; list=0
 
         ! Loop over all atoms in r
+        ! General procedure:
+        ! (1) Assign ith coordinate to grid ir(nbins,nbins,nbins)
+        ! (2) Assign ith element of list to the value of head for that bin
+        ! -> two options here:
+        ! -> -> A: No element in that cell yet, aka head(ir(1), ir(2), ir(3)) == 0
+        !           This means atom i is first atom in the cell, end of the list
+        ! -> -> B: head /= 0: means that i is not the first element in the cell
+        !           Point list to previous element.
+        ! (3) Set head of that cell to be the atom just placed.
         Do i=1, size(r,1)
             ! Find cell indices by calling the function assign_bins
             ir(:) = assign_to_grid(r(i,:), nbins, box)
