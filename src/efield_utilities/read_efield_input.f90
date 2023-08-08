@@ -1,4 +1,5 @@
-SUBROUTINE read_efield_input(inputfile, natoms, nframes, n_osc, charges, oscs)
+SUBROUTINE read_efield_input(inputfile, natoms, nframes, n_osc &
+                        , charges, oscs, traj_file, traj_format)
     ! This subroutine reads an electric field calculation input file for
     ! use to generate field files for a spectroscopy calculation.
 
@@ -11,6 +12,8 @@ SUBROUTINE read_efield_input(inputfile, natoms, nframes, n_osc, charges, oscs)
     !   n_osc : Number of oscillators in the simulation (Integer)
     !   charges : Simulation charges (1D Array of size natoms)
     !   oscs : Mapping of atoms to oscillators (1D Array of size natoms)
+    !   traj_file : Trajectory filename (Character)
+    !   traj_format : Integer (1 = xtc, 2 = xyz)
     ! 
     ! Allocates charges, oscs
 

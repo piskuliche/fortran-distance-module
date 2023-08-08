@@ -33,6 +33,8 @@
 
     end function periodic_distance2
 
+    
+
     function periodic_distance_and_vector(r1, r2, box) result(dr_arr)
     ! This function calculates the square of the distance between two atoms
     ! in a periodic system.
