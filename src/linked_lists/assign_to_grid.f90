@@ -26,6 +26,6 @@
             arr(i) = min(nbins(i), max(1, CEILING(coord(i)/box(i)*nbins(i))))
 
         EndDo
-        write(*,*) coord(1), arr(1)
+
 
     end function assign_to_grid
