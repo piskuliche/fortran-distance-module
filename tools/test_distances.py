@@ -20,4 +20,7 @@ for i in range(natoms):
         if drsq < rc_sq:
             count += 1
 
+print(np.max(pos))
+print(np.min(pos))
+
 print(count)
