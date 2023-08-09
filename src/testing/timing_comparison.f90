@@ -88,7 +88,7 @@ subroutine test_timing_comparison(natoms, rc, elapsed_time)
             if (rank == 0) THEN
                 write(*,*) "Starting Cell-List Loop"
             END IF
-            CALL cell_list_distance(r, r, box, cell_length, rc_sq, ll_dr, ll_id1, ll_id2, ll_count, same_array=.true.)
+            CALL cell_list_distance(r, r, box, cell_length, rc_sq, ll_dr, ll_id1, ll_id2, ll_count, same_array=.true., verbosity=1)
 
             IF (rank == 0) THEN
                 CALL cpu_time(end_time)
@@ -108,7 +108,7 @@ subroutine test_timing_comparison(natoms, rc, elapsed_time)
             load_balance = .true.
             CALL double_loop_distance(r, r, box, rc_sq, loop_dr, loop_id1, loop_id2 &
                     , dl_count, same_array=.true. , cell_length=cell_length &
-                    , load_balance=load_balance, verbose=.true.)
+                    , load_balance=load_balance, verbosity=1)
 
             IF (rank == 0) THEN 
                 call cpu_time(end_time)
