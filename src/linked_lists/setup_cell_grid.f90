@@ -71,8 +71,8 @@ subroutine setup_cell_grid(cell_length, box, nbins, map, mpi_nbins_start, mpi_nb
         mpi_nbins_stop = 0
         DO i=1, 3
             bins_per_rank(i) = INT(CEILING(nbins(i) / REAL(nranks)))
-            mpi_nbins_start(i) = max(rank * bins_per_rank(i) + 1, 1) ! Make sure we don't go below 1
-            mpi_nbins_stop(i) =  min((rank + 1) * bins_per_rank(i),nbins(i)) ! Make sure we don't go above nbins
+            mpi_nbins_start(i) = max(rank * bins_per_rank(i)+1, 1) ! Make sure we don't go below 1
+            mpi_nbins_stop(i) =  min((rank + 1) * bins_per_rank(i), nbins(i)) ! Make sure we don't go above nbins
         END DO
 
     end subroutine setup_cell_grid
