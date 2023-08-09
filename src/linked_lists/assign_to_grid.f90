@@ -17,14 +17,20 @@
         real, dimension(3), intent(in) :: coord, box
         ! Local Variables *****************************************************
         integer :: i
-        real, dimension(3) :: arr
+        real, dimension(3) :: arr, rtmp
         ! *********************************************************************
 
         arr = 0
         Do i=1,3
+            IF (coord(i) < 0) THEN
+                rtmp(i) = coord(i) + box(i)*CEILING(abs(coord(i))/box(i))
+            ELSE IF (coord(i) > box(i)) THEN
+                rtmp(i) = coord(i) - box(i)*CEILING(abs(coord(i))/box(i))
+            ELSE
+                rtmp(i) = coord(i)
+            END IF
             ! Assign bin index, making sure it is within the bounds of the grid
-            arr(i) = min(nbins(i), max(1, CEILING(coord(i)/box(i)*nbins(i))))
-
+            arr(i) = min(nbins(i), max(1, CEILING(rtmp(i)/box(i)*real(nbins(i)))))
         EndDo
 
 
