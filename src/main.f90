@@ -32,6 +32,7 @@ program distance_calculation
     elapsed_time = 0.0
     CALL MPI_BARRIER(MPI_COMM_WORLD, ierror)
     CALL unit_testing()
+    CALL MPI_BARRIER(MPI_COMM_WORLD, ierror)
     CALL test_timing_comparison(5000, rc, elapsed_time)
     IF ( rank == 0) THEN
         WRITE(*,*) 5000, " atoms"
