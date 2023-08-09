@@ -1,4 +1,5 @@
-subroutine cell_list_distance(r1, r2, box, cell_length, rc_sq, dists, atom1, atom2, count, same_array, offset)
+subroutine cell_list_distance(r1, r2, box, cell_length, rc_sq, dists, atom1, atom2 &
+                    , count, same_array, include_vector, dist_components, verbosity)
     ! This subroutine calculates the distance between all pairs of atoms in a system
     ! using a cell linked list. 
     ! 
@@ -42,11 +43,14 @@ subroutine cell_list_distance(r1, r2, box, cell_length, rc_sq, dists, atom1, ato
         real, dimension(:,:), intent(in) :: r1, r2
         real, dimension(:), intent(in) :: box
         logical, intent(in), optional :: same_array
-        integer, intent(in), optional :: offset
+        logical, intent(in), optional :: include_vector
+        integer, intent(in), optional :: verbosity
         ! Outputs *************************************************************
         integer, intent(out) :: count
         REAL, ALLOCATABLE, INTENT(out) :: dists(:)
         INTEGER, ALLOCATABLE, INTENT(out) :: atom1(:), atom2(:)
+        REAL, ALLOCATABLE, INTENT(out), optional :: dist_components(:,:)
+        
         ! Local Variables *****************************************************
         integer :: i, j, k, l, m, n 
         integer :: ii, jj, kk       
@@ -56,14 +60,18 @@ subroutine cell_list_distance(r1, r2, box, cell_length, rc_sq, dists, atom1, ato
         integer :: add_offset        
         real :: rsq   
         REAL, ALLOCATABLE :: dr(:)
-        INTEGER, ALLOCATABLE :: id1(:), id2(:)            
+        INTEGER, ALLOCATABLE :: id1(:), id2(:) 
+        REAL, ALLOCATABLE :: dr_components(:,:)           
 
         integer, dimension(3) :: ir         
         real, dimension(1000) :: dr_tmp ! Temporary array for storing from cell_internal_distance
         integer, dimension(1000) :: id1_tmp, id2_tmp ! Temporary array for storing from cell_internal_distance
+        real, dimension(1000, 3) :: dr_comp_tmp
+        
 
         REAL, ALLOCATABLE :: tmpdr(:) ! Temporary array for expanding storage arrays
         INTEGER, ALLOCATABLE :: tmp1(:), tmp2(:) ! Temporary array for expanding storage arrays
+        REAL, ALLOCATABLE :: tmp_components(:,:)! Temporary array for expanding storage arrays
 
         integer, dimension(3,500) :: map
 
@@ -86,12 +94,14 @@ subroutine cell_list_distance(r1, r2, box, cell_length, rc_sq, dists, atom1, ato
         ALLOCATE(counts(nranks), displs(nranks))
         
         IF (rank == 0) THEN
-            write(*,*) "*******************************************************"
-            write(*,*) "Cell-List-Distance called with the following parameters"
-            write(*,*) "cell_length: ", cell_length
-            write(*,*) "rc_sq: ", rc_sq
-            write(*,*) "box: ", box
-            write(*,*) "*******************************************************"
+            IF (PRESENT(verbosity) .and. verbosity > 1) THEN
+                write(*,*) "*******************************************************"
+                write(*,*) "Cell-List-Distance called with the following parameters"
+                write(*,*) "cell_length: ", cell_length
+                write(*,*) "rc_sq: ", rc_sq
+                write(*,*) "box: ", box
+                write(*,*) "*******************************************************"
+            END IF
         END IF
         
         CALL MPI_BARRIER(MPI_COMM_WORLD, ierror)
@@ -104,12 +114,16 @@ subroutine cell_list_distance(r1, r2, box, cell_length, rc_sq, dists, atom1, ato
         ! Allocate the head arrays
         allocate(head_r1(nbins(1), nbins(2), nbins(3)))
         allocate(head_r2(nbins(1), nbins(2), nbins(3)))
-
-        write(*,*) "nbins:", nbins(1), nbins(2), nbins(3)
+        IF (rank == 0) THEN
+            IF (PRESENT(verbosity) .and. verbosity > 0) THEN
+                write(*,*) "nbins:", nbins(1), nbins(2), nbins(3)
+            END IF
+        END IF
         
         ! Allocates the rank data arrays and resizes them if necessary
         if (.NOT. ALLOCATED (dr) )  THEN
             allocate(dr(1000)); allocate(id1(1000)); allocate(id2(1000))
+            allocate(dr_components(1000,3))
         END IF
 
         ! Initialize the head arrays
@@ -120,7 +134,9 @@ subroutine cell_list_distance(r1, r2, box, cell_length, rc_sq, dists, atom1, ato
         dr = 0.0; id1 = 0; id2 = 0
         
         IF (rank == 0) THEN
-            write(*,*) "Building linked list calculation"
+            IF (PRESENT(verbosity) .and. verbosity > 1) THEN
+                write(*,*) "Building linked list calculation"
+            END IF
         END IF 
         ! Build cell linked list
         call build_linked_list(r1, nbins, box, head_r1, list_r1)
@@ -136,7 +152,9 @@ subroutine cell_list_distance(r1, r2, box, cell_length, rc_sq, dists, atom1, ato
 
 
         IF (rank == 0) THEN
-            write(*,*) "Starting Distance Calculation"
+            IF (PRESENT(verbosity) .and. verbosity > 1) THEN
+                write(*,*) "Starting Distance Calculation"
+            END IF
         END IF 
 
     
@@ -172,21 +190,37 @@ subroutine cell_list_distance(r1, r2, box, cell_length, rc_sq, dists, atom1, ato
                 
                 ! Call the cell internal distance subroutine
                 call cell_internal_distance(ihead, jhead, list_r1, list_r2, r1, r2, &
-                        box, rc_sq, dr_tmp, id1_tmp, id2_tmp, inner_count, same_array)
+                        box, rc_sq, dr_tmp, id1_tmp, id2_tmp, inner_count &
+                        , same_array=same_array, include_vector=include_vector, dr_components=dr_comp_tmp)
 
                 ! If the rank_count + inner_count is greater than the size of the arrays
                 IF (rank_count + inner_count > size(dr)) THEN
-                    WRITE(*,*) "Rank ", rank, " is reallocating arrays"
+                    IF (PRESENT(verbosity) .and. verbosity > 2) THEN
+                        WRITE(*,*) "Rank ", rank, " is reallocating arrays"
+                    END IF
                     ! Note this block reallocates the arrays to bigger size if needed.
                     allocate(tmpdr(size(dr))); allocate(tmp1(size(id1))); allocate(tmp2(size(id2)))
+                    allocate(tmp_components(size(dr_components,1), 3))
+                    ! Save temporary arrays
                     tmp1 = id1; tmp2 = id2; tmpdr = dr
+                    tmp_components = dr_components
+                    ! Deallocate old arrays
                     deallocate(id2); deallocate(id1); deallocate(dr)
+                    deallocate(dr_components)
+                    ! Allocate to new size
                     allocate(dr(size(tmpdr)*2)); allocate(id1(size(tmp1)*2)); allocate(id2(size(tmp2)*2))
+                    allocate(dr_components(size(tmp_components,1)*2,3))
+                    ! Set to zero
                     dr = 0; id1 = 0; id2 = 0
+                    dr_components = 0.0
+                    ! Set the values
                     dr(1:size(tmpdr)) = tmpdr
                     id1(1:size(tmp1)) = tmp1
                     id2(1:size(tmp2)) = tmp2
+                    dr_components(1:size(tmp_components,1),:) = tmp_components
+                    ! Finally deallocate temporary arrays
                     deallocate(tmp2); deallocate(tmp1); deallocate(tmpdr)
+                    deallocate(tmp_components)
                 END IF
 
                 ! Append the temporary arrays to the main arrays
@@ -195,6 +229,8 @@ subroutine cell_list_distance(r1, r2, box, cell_length, rc_sq, dists, atom1, ato
                 ! If the id arrays are present, append them as well
                 id1(rank_count+1:rank_count+inner_count) = id1_tmp(1:inner_count)
                 id2(rank_count+1:rank_count+inner_count) = id2_tmp(1:inner_count)
+
+                dr_components(rank_count+1:rank_count+inner_count, :) = dr_comp_tmp(1:inner_count,:)
 
                 ! Increment the rank count by the total counts
                 rank_count = rank_count + inner_count  
@@ -205,7 +241,9 @@ subroutine cell_list_distance(r1, r2, box, cell_length, rc_sq, dists, atom1, ato
         EndDo !k
         EndDo !j
         EndDo !i
-        write(*,*) "Rank", rank, " has ", rank_count, " counts"
+        IF (PRESENT(verbosity) .and. verbosity > 2) THEN
+            write(*,*) "Rank", rank, " has ", rank_count, " counts"
+        END IF
 
 
 
@@ -239,8 +277,10 @@ subroutine cell_list_distance(r1, r2, box, cell_length, rc_sq, dists, atom1, ato
         CALL MPI_GATHERV(id2, rank_count, MPI_INTEGER, atom2, counts, displs, MPI_INTEGER, 0, MPI_COMM_WORLD, ierror)
 
         IF (rank == 0) THEN
-            write(*,*) "Cell List Distances: ", count
-            write(*,*) "********************************"
+            IF (PRESENT(verbosity) .and. verbosity > 0) THEN
+                write(*,*) "Cell List Distances: ", count
+                write(*,*) "********************************"
+            END IF
         END IF
         ! *************************************************************************
         ! Deallocate the head arrays

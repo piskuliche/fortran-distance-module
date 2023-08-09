@@ -1,6 +1,6 @@
 subroutine double_loop_distance(r1, r2, box, rc_sq &
         , dists, atom1, atom2, count, same_array, cell_length, load_balance &
-        , verbose)
+        , verbosity)
     ! This subroutine calculates the distance between all pairs of atoms in a system
     ! using a double loop.
     !
@@ -29,7 +29,7 @@ subroutine double_loop_distance(r1, r2, box, rc_sq &
         logical, INTENT(in), optional :: same_array   ! Flag to compare with same array (default 0)
         REAL, INTENT(in), optional :: cell_length
         LOGICAL, INTENT(inout), optional :: load_balance
-        LOGICAL, INTENT(in), optional :: verbose
+        INTEGER, INTENT(in), optional :: verbosity
         ! Outputs *************************************************************
         REAL, ALLOCATABLE, INTENT(out) :: dists(:)
         INTEGER, ALLOCATABLE, INTENT(out) :: atom1(:), atom2(:)
@@ -93,14 +93,15 @@ subroutine double_loop_distance(r1, r2, box, rc_sq &
         ! 
         if (load_balance) THEN
             if (rank == 0) THEN
-                write(*,*) "Load balancing has been selected"
-            write(*,*) nper
+                IF (PRESENT(verbosity) .and. verbosity > 0) THEN
+                    write(*,*) "Load balancing has been selected"
+                END IF
             END IF 
             !write(*,*) ncoords*(ncoords-1), ncoords*(ncoords-1)/(2*nranks)
             ! Calculate the number of calculations per rank
             nper = ncoords*(ncoords-1)/(2*nranks)
             ! Write verbose info to the screen
-            IF (verbose) THEN 
+            IF (PRESENT(verbosity) .and. verbosity > 2) THEN
                 write(*,*) "rank load", ncoords, nranks, nper
             END IF
             DO i=1, nranks
@@ -124,7 +125,7 @@ subroutine double_loop_distance(r1, r2, box, rc_sq &
         END IF
         ! *************************************************************************
 
-        IF (verbose) THEN
+        IF (PRESENT(verbosity) .and. verbosity > 2) THEN
             write(*,*) "Rank ", rank, " made it to the double loop"
             write(*,*) "Rank ", rank, " is calculating distances ", istart, " to ", istop
         END IF
@@ -154,7 +155,7 @@ subroutine double_loop_distance(r1, r2, box, rc_sq &
                     ! This could eventually be made a subroutine - but haven't done that yet.
                     IF (dr_count > size(dr)) THEN
                         ! Write out reallocations
-                        IF (verbose) THEN
+                        IF (PRESENT(verbosity) .and. verbosity > 2) THEN
                             WRITE(*,*) "Rank ", rank, " is reallocating arrays"
                         END IF 
 
@@ -179,7 +180,7 @@ subroutine double_loop_distance(r1, r2, box, rc_sq &
         EndDo
 
         ! Write to the screen
-        IF (verbose) THEN
+        IF (PRESENT(verbosity) .and. verbosity > 2) THEN
             write(*,*) "Rank ", rank, " has ", dr_count, " distances"
         END IF
         
@@ -203,8 +204,10 @@ subroutine double_loop_distance(r1, r2, box, rc_sq &
         CALL MPI_GATHERV(id1, dr_count, MPI_INTEGER, atom1, counts, displs, MPI_INTEGER, 0, MPI_COMM_WORLD, ierror)
         CALL MPI_GATHERV(id2, dr_count, MPI_INTEGER, atom2, counts, displs, MPI_INTEGER, 0, MPI_COMM_WORLD, ierror)
         ! **************************************************************************
-        IF (rank == 0 .AND. verbose) THEN 
-            write(*,*) "double loop distances:", count
+        IF (rank == 0) THEN 
+            IF (PRESENT(verbosity) .and. verbosity > 0) THEN
+                write(*,*) "double loop distances:", count
+            END IF
         ENDIF
 
 
