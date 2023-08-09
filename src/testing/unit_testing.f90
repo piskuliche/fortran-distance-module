@@ -22,7 +22,7 @@ SUBROUTINE unit_testing()
 
     ! First Unit Test - basic coordinates
     IF (rank == 0) THEN
-        write(*,*) "Performing first unit test"
+        write(*,*) "Performing Unit Testing"
     END IF
 
     box = 30.0
@@ -38,12 +38,15 @@ SUBROUTINE unit_testing()
     load_balance = .true.
     CALL double_loop_distance(r, r, box, rc_sq, loop_dr, loop_id1, loop_id2 &
                     , loop_count, same_array=.true. , cell_length=cell_length &
-                    , load_balance=load_balance, verbose=.true.)
-    CALL cell_list_distance(r, r, box, cell_length, rc_sq, ll_dr, ll_id1, ll_id2, ll_count, same_array=.true.)
+                    , load_balance=load_balance, verbosity=0)
+    CALL cell_list_distance(r, r, box, cell_length, rc_sq, ll_dr, ll_id1, ll_id2, ll_count &
+                            , same_array=.true., include_vector=.false.)
     IF (rank == 0) THEN
-        write(*,*) "Unit Test One"
-        write(*,*) "Unit Test Result", ll_count, loop_count
-        write(*,*) "Expected Result", 0
+        IF (ll_count /= loop_count) THEN
+            write(*,*) "Unit Test One"
+            write(*,*) "Unit Test Result", ll_count, loop_count
+            write(*,*) "Expected Result", 0
+        END IF
     END IF
 
     CALL MPI_BARRIER(MPI_COMM_WORLD, ierror)
@@ -53,12 +56,15 @@ SUBROUTINE unit_testing()
     cell_length = rc/2.0
     CALL double_loop_distance(r, r, box, rc_sq, loop_dr, loop_id1, loop_id2 &
                     , loop_count, same_array=.true. , cell_length=cell_length &
-                    , load_balance=load_balance, verbose=.true.)
-    CALL cell_list_distance(r, r, box, cell_length, rc_sq, ll_dr, ll_id1, ll_id2, ll_count, same_array=.true.)
+                    , load_balance=load_balance, verbosity=0)
+    CALL cell_list_distance(r, r, box, cell_length, rc_sq, ll_dr, ll_id1, ll_id2, ll_count&
+                            , same_array=.true., include_vector=.false.)
     IF (rank == 0) THEN
-        write(*,*) "Unit Test Two"
-        write(*,*) "Unit Test Result", ll_count, loop_count
-        write(*,*) "Expected Result", 7
+        IF (ll_count /= loop_count) THEN
+            write(*,*) "Unit Test Two"
+            write(*,*) "Unit Test Result", ll_count, loop_count
+            write(*,*) "Expected Result", 7
+        END IF
     END IF
 
     CALL MPI_BARRIER(MPI_COMM_WORLD, ierror)
@@ -69,12 +75,15 @@ SUBROUTINE unit_testing()
 
     CALL double_loop_distance(r, r, box, rc_sq, loop_dr, loop_id1, loop_id2 &
                     , loop_count, same_array=.true. , cell_length=cell_length &
-                    , load_balance=load_balance, verbose=.true.)
-    CALL cell_list_distance(r, r, box, cell_length, rc_sq, ll_dr, ll_id1, ll_id2, ll_count, same_array=.true.)
+                    , load_balance=load_balance, verbosity=0)
+    CALL cell_list_distance(r, r, box, cell_length, rc_sq, ll_dr, ll_id1, ll_id2, ll_count&
+                            , same_array=.true., include_vector=.false.)
     IF (rank == 0) THEN
-        write(*,*) "Unit Test Three"
-        write(*,*) "Unit Test Result", ll_count, loop_count
-        write(*,*) "Expected Result", 18
+        IF (ll_count /= loop_count) THEN
+            write(*,*) "Unit Test Three"
+            write(*,*) "Unit Test Result", ll_count, loop_count
+            write(*,*) "Expected Result", 18
+        END IF
     END IF
 
     CALL MPI_BARRIER(MPI_COMM_WORLD, ierror)
@@ -86,12 +95,15 @@ SUBROUTINE unit_testing()
 
     CALL double_loop_distance(r, r, box, rc_sq, loop_dr, loop_id1, loop_id2 &
                     , loop_count, same_array=.true. , cell_length=cell_length &
-                    , load_balance=load_balance, verbose=.true.)
-    CALL cell_list_distance(r, r, box, cell_length, rc_sq, ll_dr, ll_id1, ll_id2, ll_count, same_array=.true.)
+                    , load_balance=load_balance, verbosity=0)
+    CALL cell_list_distance(r, r, box, cell_length, rc_sq, ll_dr, ll_id1, ll_id2, ll_count&
+                            , same_array=.true., include_vector=.false.)
     IF (rank == 0) THEN
-        write(*,*) "Unit Test Four"
-        write(*,*) "Unit Test Result", ll_count, loop_count
-        write(*,*) "Expected Result", 22
+        IF (ll_count /= loop_count) THEN
+            write(*,*) "Unit Test Four"
+            write(*,*) "Unit Test Result", ll_count, loop_count
+            write(*,*) "Expected Result", 22
+        END IF
     END IF
 
     CALL MPI_BARRIER(MPI_COMM_WORLD, ierror)
@@ -111,12 +123,15 @@ SUBROUTINE unit_testing()
 
      CALL double_loop_distance(r, r, box, rc_sq, loop_dr, loop_id1, loop_id2 &
                     , loop_count, same_array=.true. , cell_length=cell_length &
-                    , load_balance=load_balance, verbose=.true.)
-    CALL cell_list_distance(r, r, box, cell_length, rc_sq, ll_dr, ll_id1, ll_id2, ll_count, same_array=.true.)
+                    , load_balance=load_balance, verbosity=0)
+    CALL cell_list_distance(r, r, box, cell_length, rc_sq, ll_dr, ll_id1, ll_id2, ll_count&
+                            , same_array=.true., include_vector=.false.)
     IF (rank == 0) THEN
-        write(*,*) "Unit Test Five"
-        write(*,*) "Unit Test Result", ll_count, loop_count
-        write(*,*) "Expected Result", 12
+        IF (ll_count /= loop_count) THEN
+            write(*,*) "Unit Test Five"
+            write(*,*) "Unit Test Result", ll_count, loop_count
+            write(*,*) "Expected Result", 12
+        END IF
     END IF
 
     CALL MPI_BARRIER(MPI_COMM_WORLD, ierror)
@@ -136,24 +151,25 @@ SUBROUTINE unit_testing()
 
      CALL double_loop_distance(r, r, box, rc_sq, loop_dr, loop_id1, loop_id2 &
                     , loop_count, same_array=.true. , cell_length=cell_length &
-                    , load_balance=load_balance, verbose=.true.)
-    CALL cell_list_distance(r, r, box, cell_length, rc_sq, ll_dr, ll_id1, ll_id2, ll_count, same_array=.true.)
+                    , load_balance=load_balance, verbosity=0)
+    CALL cell_list_distance(r, r, box, cell_length, rc_sq, ll_dr, ll_id1, ll_id2, ll_count&
+                            , same_array=.true., include_vector=.false.)
     IF (rank == 0) THEN
-        write(*,*) "Unit Test Five"
-        write(*,*) "Unit Test Result", ll_count, loop_count
-        write(*,*) "Expected Result", 18
-        DO i=1, ll_count
-            write(*,*) ll_id1(i), ll_id2(i), ll_dr(i)
-        END DO
-        write(*,*) "*clear*"
-        DO i=1, loop_count
-            write(*,*) loop_id1(i), loop_id2(i), loop_dr(i)
-        END DO
+        IF (ll_count /= loop_count) THEN
+            write(*,*) "Unit Test Five"
+            write(*,*) "Unit Test Result", ll_count, loop_count
+            write(*,*) "Expected Result", 18
+            DO i=1, ll_count
+                write(*,*) ll_id1(i), ll_id2(i), ll_dr(i)
+            END DO
+            write(*,*) "*clear*"
+            DO i=1, loop_count
+                write(*,*) loop_id1(i), loop_id2(i), loop_dr(i)
+            END DO
+        END IF
     END IF
 
     CALL MPI_BARRIER(MPI_COMM_WORLD, ierror)
-
-
 
 
 END SUBROUTINE
