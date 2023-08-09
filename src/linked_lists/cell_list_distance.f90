@@ -117,7 +117,8 @@ subroutine cell_list_distance(r1, r2, box, cell_length, rc_sq, dists, atom1, ato
         ! Set up the grid for the distance calculation
         ! Also sets the mpi_nbins_start and stop variables that define which bins the rank is responsible for.
         call setup_cell_grid(cell_length, box, nbins, map, mpi_nbins_start, mpi_nbins_stop)
-        CALL MPI_BARRIER(MPI_COMM_WORLD,ierror)
+
+        CALL MPI_BARRIER(MPI_COMM_WORLD, ierror)
 
         
 
@@ -256,7 +257,7 @@ subroutine cell_list_distance(r1, r2, box, cell_length, rc_sq, dists, atom1, ato
             EndDo !n
             EndDo !m
             EndDo !l
-            
+
         EndDo !k
         EndDo !j
         EndDo !i
