@@ -1,4 +1,4 @@
-SUBROUTINE read_efield_input(inputfile, natoms, nframes, n_osc &
+SUBROUTINE read_efield_input(inputfile, natoms, nframes, n_osc, rc &
                         , charges, oscs, traj_file, traj_format)
     ! This subroutine reads an electric field calculation input file for
     ! use to generate field files for a spectroscopy calculation.
@@ -25,11 +25,11 @@ SUBROUTINE read_efield_input(inputfile, natoms, nframes, n_osc &
     ! Output Variables
 
     INTEGER, INTENT(OUT) :: natoms, nframes, n_osc
+    REAL, INTENT(OUT) :: rc
     REAL, ALLOCATABLE, INTENT(OUT) :: charges(:)
     INTEGER, ALLOCATABLE, INTENT(OUT) :: oscs(:)
     ! Local Variables
     INTEGER :: traj_format
-    INTEGER :: nframes
     CHARACTER(LEN=40) :: charge_file, osc_file, traj_file
 
     ! Open the input file
@@ -41,13 +41,15 @@ SUBROUTINE read_efield_input(inputfile, natoms, nframes, n_osc &
     READ(21,*)  ! charge_file name, oscillator_name
     READ(21,*) charge_file, osc_file
     READ(21,*) 
-    READ(22,*) natoms, nframes
+    READ(21,*) natoms, nframes
+    READ(21,*) 
+    READ(21,*) rc
 
     ALLOCATE(charges(natoms))
     ALLOCATE(oscs(natoms))
 
-    read_charges(chargE_file, natoms, charges)
-    read_osc(osc_file, natoms, oscs, n_osc)
+    CALL read_charges(charge_file, natoms, charges)
+    CALL read_osc(osc_file, natoms, oscs, n_osc)
 
 
     CLOSE(21)
@@ -100,7 +102,7 @@ SUBROUTINE read_osc(osc_file, natoms, contributes, count)
 
 
     ! Initialize to zero charge
-    charges = 0.0
+    contributes = 0.0
 
     count = 0
 
@@ -109,7 +111,8 @@ SUBROUTINE read_osc(osc_file, natoms, contributes, count)
         read(22,*) contributes(i)
         IF (contributes(i) == 1) THEN
             count = count + 1
+        END IF
     END DO
     CLOSE(22)
 
-END SUBROUTINE read_charges
+END SUBROUTINE read_osc
