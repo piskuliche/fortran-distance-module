@@ -29,12 +29,14 @@ def compare_output(a, b):
     c_anotinb = 0
     for pair in a:
         if pair not in b:
+            print("not in b", pair)
             # print(pair, "in a and not in b")
             c_anotinb += 1
 
     c_bnotina = 0
     for pair in b:
         if pair not in a:
+            print("not in a", pair)
             # print(pair, "in b and not in a")
             c_bnotina += 1
 
