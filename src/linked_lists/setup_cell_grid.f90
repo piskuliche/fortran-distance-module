@@ -34,7 +34,6 @@ subroutine setup_cell_grid(cell_length, box, nbins, map, mpi_nbins_start, mpi_nb
         ! MPI Communiator
         CALL MPI_COMM_SIZE(MPI_COMM_WORLD, nranks, ierror)
         CALL MPI_COMM_RANK(MPI_COMM_WORLD, rank, ierror)
-
         ! Reset the map and binsize
         map = 0; nbins = 0
 
