@@ -120,8 +120,6 @@ subroutine cell_list_distance(r1, r2, box, cell_length, rc_sq, dists, atom1, ato
 
         CALL MPI_BARRIER(MPI_COMM_WORLD, ierror)
 
-        
-
         ! Allocate the head arrays
         allocate(head_r1(nbins(1), nbins(2), nbins(3)))
         allocate(head_r2(nbins(1), nbins(2), nbins(3)))
