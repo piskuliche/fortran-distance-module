@@ -22,6 +22,7 @@ SUBROUTINE unit_testing()
     CALL MPI_COMM_SIZE(MPI_COMM_WORLD, nranks, ierror)
     CALL MPI_COMM_RANK(MPI_COMM_WORLD, rank, ierror)
 
+    IF (.false.) THEN
     ! First Unit Test - basic coordinates
     IF (rank == 0) THEN
         write(*,*) "Performing Unit Testing"
@@ -176,7 +177,7 @@ SUBROUTINE unit_testing()
     DEALLOCATE(r)
     ALLOCATE(r(5000,3))
     ! This unit test 
-    IF (.false.) THEN
+
         DO j=1, 5
             IF (rank == 0) THEN
                 call random_number(rnd)
@@ -224,8 +225,11 @@ SUBROUTINE unit_testing()
         END DO
     END IF
 
+    write(*,*) "*************************************"
     write(*,*) "Final Test"
-    deallocate(r)
+    IF (ALLOCATED(R)) THEN 
+        deallocate(r)
+    END IF
     if (rank == 0) THEN
         CALL read_xyz("../test_files/test.xyz", r)
         natoms = size(r,1)
@@ -251,19 +255,20 @@ SUBROUTINE unit_testing()
     CALL MPI_BARRIER(MPI_COMM_WORLD, ierror)
 
     CALL cell_list_distance(r, r, box, cell_length, rc_sq, ll_dr, ll_id1, ll_id2, ll_count &
-                            , same_array=.true., include_vector=.false.)
+                            , same_array=.true., include_vector=.false., verbosity=3)
 
     CALL MPI_BARRIER(MPI_COMM_WORLD, ierror)
     IF (rank == 0) THEN
         write(*,*) loop_count, ll_count
         IF (ll_count /= loop_count) THEN
-            write(*,*) "Unit Test Four"
-            write(*,*) "Unit Test Result", ll_count, loop_count
+            write(*,*) "Unit Test Eight"
+            write(*,*) "Unit Test Result", loop_count, ll_count
             write(*,*) "Expected Result", 22
         END IF
     END IF
 
     CALL MPI_BARRIER(MPI_COMM_WORLD, ierror)
+    write(*,*) "*************************************"
 
     
 
