@@ -1,6 +1,6 @@
-add_library(distance_module "")
+add_library(efield_module "")
   
-target_sources(distance_module
+target_sources(efield_module
   PUBLIC
-    ${CMAKE_CURRENT_LIST_DIR}/distance_module.f90
+    ${CMAKE_CURRENT_LIST_DIR}/efield_module.f90
   )

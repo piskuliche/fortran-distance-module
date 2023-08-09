@@ -8,11 +8,16 @@ message(STATUS ${MPI_Fortran_INCLUDE_PATH})
 message(STATUS ${MPI_INCLUDE_PATH})
 message(STATUS "test")
 
+find_package(gmxfort CONFIG)
+
 set(CMAKE_Fortran_FLAGS "-O3")
 
 set(CMAKE_Fortran_MODULE_DIRECTORY ${CMAKE_BINARY_DIR}/modules)
 
 include(GNUInstallDirs)
+include_directories(/usr/local/include)
+link_directories(/usr/local/lib)
+
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY
   ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR})
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY
