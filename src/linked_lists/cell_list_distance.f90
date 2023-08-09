@@ -92,6 +92,15 @@ subroutine cell_list_distance(r1, r2, box, cell_length, rc_sq, dists, atom1, ato
 
         ! Allocate the MPI arrays for counts and displacements
         ALLOCATE(counts(nranks), displs(nranks))
+        counts = 0; displs=0
+        IF (ALLOCATED(dists)) THEN
+            dists=0; atom1=0; atom2=0
+            IF (present(dist_components)) THEN
+                dist_components =0.0
+            END IF
+        END IF
+
+
         
         IF (rank == 0) THEN
             IF (PRESENT(verbosity) .and. verbosity > 1) THEN
@@ -108,6 +117,7 @@ subroutine cell_list_distance(r1, r2, box, cell_length, rc_sq, dists, atom1, ato
         ! Set up the grid for the distance calculation
         ! Also sets the mpi_nbins_start and stop variables that define which bins the rank is responsible for.
         call setup_cell_grid(cell_length, box, nbins, map, mpi_nbins_start, mpi_nbins_stop)
+        CALL MPI_BARRIER(MPI_COMM_WORLD,ierror)
 
         
 
@@ -132,12 +142,14 @@ subroutine cell_list_distance(r1, r2, box, cell_length, rc_sq, dists, atom1, ato
         list_r1 = 0; list_r2 = 0
         ! Initialze the output arrays
         dr = 0.0; id1 = 0; id2 = 0
+        dr_components = 0
         
         IF (rank == 0) THEN
             IF (PRESENT(verbosity) .and. verbosity > 1) THEN
                 write(*,*) "Building linked list calculation"
             END IF
         END IF 
+
         ! Build cell linked list
         call build_linked_list(r1, nbins, box, head_r1, list_r1)
 
@@ -156,6 +168,12 @@ subroutine cell_list_distance(r1, r2, box, cell_length, rc_sq, dists, atom1, ato
                 write(*,*) "Starting Distance Calculation"
             END IF
         END IF 
+
+        IF (PRESENT(verbosity) .and. verbosity > 2) THEN
+            DO i=1,3
+                write(*,*) "rank goes from ", mpi_nbins_start(i), " to ", mpi_nbins_stop(i)
+            END DO 
+        END IF
 
     
         ! **** MPI BARRIER *******************************************************
@@ -238,6 +256,7 @@ subroutine cell_list_distance(r1, r2, box, cell_length, rc_sq, dists, atom1, ato
             EndDo !n
             EndDo !m
             EndDo !l
+            
         EndDo !k
         EndDo !j
         EndDo !i
@@ -254,9 +273,19 @@ subroutine cell_list_distance(r1, r2, box, cell_length, rc_sq, dists, atom1, ato
         ! the final output array
 
         ! (1) Sum up the counts from each rank
-        CALL MPI_REDUCE(rank_count, count, 1, MPI_INTEGER, MPI_SUM, 0, MPI_COMM_WORLD, ierror)
+        CALL MPI_ALLREDUCE(rank_count, count, 1, MPI_INTEGER, MPI_SUM,  MPI_COMM_WORLD, ierror)
+
         ! (1b) Allocate the output arrays based on this total count
+        IF (ALLOCATED(dists)) THEN
+            deallocate(dists, atom1, atom2)
+            IF (present(dist_components)) THEN
+                deallocate(dist_components)
+            ENDIF
+        END IF
         allocate(dists(count), atom1(count), atom2(count))
+        IF (present(dist_components)) THEN
+            allocate(dist_components(count,3))
+        ENDIF
         
         ! (2) Gather the counts from each rank into a total array of counts
         CALL MPI_GATHER(rank_count, 1, MPI_INTEGER, counts, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierror)
@@ -287,6 +316,7 @@ subroutine cell_list_distance(r1, r2, box, cell_length, rc_sq, dists, atom1, ato
         deallocate(head_r1)
         deallocate(head_r2)
         deallocate(dr, id1, id2)
+        deallocate(dr_components)
         deallocate(counts, displs)
             
     end subroutine cell_list_distance
