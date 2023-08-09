@@ -47,9 +47,9 @@ subroutine test_timing_comparison(natoms, rc, elapsed_time)
 
 
         ! Initialize box side lengths
-        box(1) = 103
-        box(2) = 102
-        box(3) = 101
+        box(1) = 41
+        box(2) = 42
+        box(3) = 43
 
         ! Initialize cell length and rc_sq
         cell_length = rc/2.0
@@ -88,7 +88,8 @@ subroutine test_timing_comparison(natoms, rc, elapsed_time)
             if (rank == 0) THEN
                 write(*,*) "Starting Cell-List Loop"
             END IF
-            CALL cell_list_distance(r, r, box, cell_length, rc_sq, ll_dr, ll_id1, ll_id2, ll_count, same_array=.true., verbosity=1)
+            CALL cell_list_distance(r, r, box, cell_length, rc_sq, ll_dr, ll_id1, ll_id2, ll_count &
+                        , same_array=.true., include_vector=.false., verbosity=1)
 
             IF (rank == 0) THEN
                 CALL cpu_time(end_time)
@@ -116,6 +117,7 @@ subroutine test_timing_comparison(natoms, rc, elapsed_time)
             ENDIF
             
             CALL MPI_BARRIER(MPI_COMM_WORLD, ierror)
+            write(*,*) "timing counts", dl_count, ll_count
 
             ! WRITE FILES
             IF (rank == 0) THEN
