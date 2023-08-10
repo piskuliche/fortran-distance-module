@@ -1,0 +1,8 @@
+# Trajfile, XTC
+"../..//temp.xyz" 2
+# chargefile, oscfile
+"../test_files/charges.dat" "../test_files/osc.dat"
+#natoms nframes
+1431 10
+# rc
+3.1

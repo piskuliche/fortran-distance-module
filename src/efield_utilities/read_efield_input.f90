@@ -31,7 +31,7 @@ SUBROUTINE read_efield_input(inputfile, natoms, nframes, n_osc, rc &
     ! Local Variables
     INTEGER :: traj_format
     CHARACTER(LEN=40) :: charge_file, osc_file, traj_file
-
+    write(*,*) TRIM(inputfile)
     ! Open the input file
     OPEN(21, FILE=TRIM(inputfile), STATUS="OLD")
     
