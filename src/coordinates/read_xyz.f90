@@ -8,8 +8,11 @@ SUBROUTINE read_xyz(filename, r)
     ! Output Arguments
     REAL, ALLOCATABLE, INTENT(OUT) :: r(:,:)
 
+
     ! Local Variables
     INTEGER :: i, j, natoms
+
+
 
 
     OPEN(11, FILE=TRIM(filename), STATUS='old')

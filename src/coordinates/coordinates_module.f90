@@ -7,6 +7,7 @@ MODULE coordinates_module
 CONTAINS 
 
     INCLUDE "read_xyz.f90"
+    INCLUDE "read_next.f90"
     INCLUDE "coordinate_generator.f90"
 
 END MODULE coordinates_module
