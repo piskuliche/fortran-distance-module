@@ -8,6 +8,8 @@ SUBROUTINE unit_testing()
     REAL :: rc, cell_length, rc_sq
 
     REAL, ALLOCATABLE :: r(:,:), ll_dr(:), loop_dr(:)
+    REAL, ALLOCATABLE :: loop_drx(:), loop_dry(:), loop_drz(:)
+    REAL, ALLOCATABLE :: ll_drx(:), ll_dry(:), ll_drz(:)
     INTEGER, ALLOCATABLE :: ll_id1(:), ll_id2(:), loop_id1(:), loop_id2(:)
     REAL, DIMENSION(3) :: box
 
@@ -247,15 +249,18 @@ SUBROUTINE unit_testing()
     rc_sq = rc**2.0
     cell_length = rc/2.0
     loop_count = 0; ll_count = 0
+    write(*,*) "Test"
 
     CALL double_loop_distance(r, r, box, rc_sq, loop_dr, loop_id1, loop_id2 &
                     , loop_count, same_array=.true. , cell_length=cell_length &
-                    , load_balance=load_balance, verbosity=0)
+                    , load_balance=load_balance, include_vector=.true. &
+                    , drx=loop_drx, dry=loop_dry, drz=loop_drz, verbosity=0)
 
     CALL MPI_BARRIER(MPI_COMM_WORLD, ierror)
-
+     write(*,*) "Test2"
     CALL cell_list_distance(r, r, box, cell_length, rc_sq, ll_dr, ll_id1, ll_id2, ll_count &
-                            , same_array=.true., include_vector=.false., verbosity=3)
+                            , same_array=.true., include_vector=.true. &
+                            , drx=ll_drx, dry=ll_dry, drz=ll_drz, verbosity=3)
 
     CALL MPI_BARRIER(MPI_COMM_WORLD, ierror)
     IF (rank == 0) THEN
