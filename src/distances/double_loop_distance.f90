@@ -1,6 +1,6 @@
 subroutine double_loop_distance(r1, r2, box, rc_sq &
         , dists, atom1, atom2, count, same_array, cell_length, load_balance &
-        , verbosity)
+        , include_vector, dist_components, verbosity)
     ! This subroutine calculates the distance between all pairs of atoms in a system
     ! using a double loop.
     !
@@ -29,11 +29,14 @@ subroutine double_loop_distance(r1, r2, box, rc_sq &
         logical, INTENT(in), optional :: same_array   ! Flag to compare with same array (default 0)
         REAL, INTENT(in), optional :: cell_length
         LOGICAL, INTENT(inout), optional :: load_balance
+        logical, intent(in), optional :: include_vector
         INTEGER, INTENT(in), optional :: verbosity
         ! Outputs *************************************************************
         REAL, ALLOCATABLE, INTENT(out) :: dists(:)
         INTEGER, ALLOCATABLE, INTENT(out) :: atom1(:), atom2(:)
         INTEGER, INTENT(out) :: count    ! Number of pairs found
+        REAL, ALLOCATABLE, INTENT(out), optional :: dist_components(:,:)
+
         ! Local Variables *****************************************************
         INTEGER :: i, j, di ! Loop Indices
         REAL :: rsq         ! Temporary distance squared
@@ -50,6 +53,7 @@ subroutine double_loop_distance(r1, r2, box, rc_sq &
 
         REAL, ALLOCATABLE :: dr(:), tmpdr(:) ! TEMPORARY Distance
         INTEGER, ALLOCATABLE :: id1(:), id2(:), tmp1(:), tmp2(:)
+        REAL, ALLOCATABLE :: tmp_components(:,:)! Temporary array for expanding storage arrays
         INTEGER, ALLOCATABLE :: counts(:), displs(:), ifinishes(:), istarts(:)
 
         INTEGER :: ncalcs, iprev
@@ -61,10 +65,12 @@ subroutine double_loop_distance(r1, r2, box, rc_sq &
         ALLOCATE(displs(nranks))
 
 
-        ! Allocate initial block for arrays
-        IF ( .NOT. ALLOCATED(dr) ) THEN
-            allocate(dr(1000)); allocate(id1(1000)); allocate(id2(1000))
-        ENDIF
+        IF (ALLOCATED(dists)) THEN
+            dists=0; atom1=0; atom2=0
+            IF (present(dist_components)) THEN
+                dist_components =0.0
+            END IF
+        END IF
         
         ALLOCATE(ifinishes(nranks))
         ALLOCATE(istarts(nranks))
@@ -129,6 +135,12 @@ subroutine double_loop_distance(r1, r2, box, rc_sq &
             write(*,*) "Rank ", rank, " made it to the double loop"
             write(*,*) "Rank ", rank, " is calculating distances ", istart, " to ", istop
         END IF
+
+        ! Allocates the rank data arrays and resizes them if necessary
+        if (.NOT. ALLOCATED (dr) )  THEN
+            allocate(dr(1000)); allocate(id1(1000)); allocate(id2(1000))
+            allocate(dr_components(1000,3))
+        END IF
         
         ! Distance Calculation ****************************************************
         count = 0
@@ -146,35 +158,52 @@ subroutine double_loop_distance(r1, r2, box, rc_sq &
 
             Do j=jstart, size(r2,1)
                 ! Periodic distance calculation
-                rsq = periodic_distance2(r1(i,:), r2(j,:), box)
+                IF (present(include_vector) .and. .NOT. include_vector) THEN
+                    rsq = periodic_distance2(r1(i,:), r2(j,:), box)
+                ELSE
+                    dr_arr = periodic_dstance_and_vector(r1(i,:), r2(j,:), box)
+                    rsq = dr_arr(4) **2.0
+                END IF
                 ! Distance cutoff & store non-zero elements
                 If (rsq < rc_sq) Then
                     dr_count = dr_count + 1
                     
                     ! This code does dynamics reallocation if needed to increase the size of the arrays
                     ! This could eventually be made a subroutine - but haven't done that yet.
-                    IF (dr_count > size(dr)) THEN
-                        ! Write out reallocations
+                    IF (rank_count + inner_count > size(dr)) THEN
                         IF (PRESENT(verbosity) .and. verbosity > 2) THEN
                             WRITE(*,*) "Rank ", rank, " is reallocating arrays"
-                        END IF 
-
+                        END IF
                         ! Note this block reallocates the arrays to bigger size if needed.
                         allocate(tmpdr(size(dr))); allocate(tmp1(size(id1))); allocate(tmp2(size(id2)))
+                        allocate(tmp_components(size(dr_components,1), 3))
+                        ! Save temporary arrays
                         tmp1 = id1; tmp2 = id2; tmpdr = dr
+                        tmp_components = dr_components
+                        ! Deallocate old arrays
                         deallocate(id2); deallocate(id1); deallocate(dr)
+                        deallocate(dr_components)
+                        ! Allocate to new size
                         allocate(dr(size(tmpdr)*2)); allocate(id1(size(tmp1)*2)); allocate(id2(size(tmp2)*2))
+                        allocate(dr_components(size(tmp_components,1)*2,3))
+                        ! Set to zero
                         dr = 0; id1 = 0; id2 = 0
+                        dr_components = 0.0
+                        ! Set the values
                         dr(1:size(tmpdr)) = tmpdr
                         id1(1:size(tmp1)) = tmp1
                         id2(1:size(tmp2)) = tmp2
+                        dr_components(1:size(tmp_components,1),:) = tmp_components
+                        ! Finally deallocate temporary arrays
                         deallocate(tmp2); deallocate(tmp1); deallocate(tmpdr)
+                        deallocate(tmp_components)
                     END IF
                     ! End Dynamic Reallocation
 
                     dr(dr_count) = rsq
                     id1(dr_count) = i
                     id2(dr_count) = j
+                    dr_components(dr_count,:) = 
                 EndIf
             EndDo
         EndDo
