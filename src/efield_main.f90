@@ -33,9 +33,11 @@ PROGRAM efield_main
     INTEGER :: boxunit, trjunit
 
     ! Efield Input Subroutine Arguments
-    INTEGER :: natoms, nframes, n_osc, traj_format
+    INTEGER :: natoms, nbonds
+    INTEGER :: nframes, n_osc, traj_format
     REAL, ALLOCATABLE :: charges(:) 
-    INTEGER, ALLOCATABLE :: oscs(:)
+    INTEGER, ALLOCATABLE :: oscs(:), osc_bnd_indices(:)
+    INTEGER, ALLOCATABLE :: bonds(:,:)
 
     REAL :: rc, rc_sq
 
@@ -50,8 +52,9 @@ PROGRAM efield_main
     ! Distance variables
     REAL, ALLOCATABLE :: dr(:)
     INTEGER, ALLOCATABLE :: id1(:), id2(:)
-    INTEGER :: drcount, ntmp
+    INTEGER :: drcount, ntmp, ocount
     LOGICAL :: load_balance
+
 
     ! MPI Variables
     INTEGER :: rank, nranks, ierror
@@ -70,9 +73,12 @@ PROGRAM efield_main
     inputfile = "../test_files/test_input.inp"
     ! (1 & 2) Reads in the input file, the charges, and the oscilators
     IF (rank == 0) THEN
+        ! Read the input file for the run
+        ! This also reads the charges, oscillators, and bonds
         CALL read_efield_input(inputfile & ! Input
-       , natoms, nframes, n_osc, rc, charges, oscs, traj_fname, traj_format) ! Output
+       , natoms,  nframes, n_osc, rc, charges, oscs, bonds, traj_fname, traj_format) ! Output
 
+        nbonds = size(bonds,1)
         IF (traj_format == 1) THEN
             WRITE(*,*) "Trajectory filetype is XTC"
             WRITE(*,*) "This hasn't been implemented yet - stopping!"
@@ -95,10 +101,12 @@ PROGRAM efield_main
 
     ! Broadcast input information to all ranks
     CALL MPI_BCAST(natoms, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierror)
+    CALL MPI_BCAST(nbonds, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierror)
     CALL MPI_BARRIER(MPI_COMM_WORLD,ierror)
 
     IF (rank > 0) THEN
         ALLOCATE(r(natoms,3))
+        ALLOCATE(bonds(nbonds,2))
     END IF
 
     ! These are allocated already on rank 0 in the read_efield_input subroutine
@@ -112,6 +120,7 @@ PROGRAM efield_main
     CALL MPI_BCAST(charges, size(charges), MPI_REAL, 0, MPI_COMM_WORLD, ierror)
     CALL MPI_BCAST(oscs, size(oscs), MPI_INTEGER, 0, MPI_COMM_WORLD, ierror)
     CALL MPI_BCAST(nframes, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierror)
+    CALL MPI_BCAST(bonds, size(bonds), MPI_INTEGER, 0, MPI_COMM_WORLD, ierror)
     CALL MPI_BARRIER(MPI_COMM_WORLD,ierror)
 
     if (rank == 0) THEN
@@ -138,7 +147,6 @@ PROGRAM efield_main
             write(*,*) "Read", ntmp, "atoms"
             write(*,*) "L:", L
         END IF
-        WRITE(*,*) "Rank", rank, "is waiting"
 
         ! Broadcast the coordinates to all ranks
         CALL MPI_BARRIER(MPI_COMM_WORLD, ierror)
@@ -148,11 +156,15 @@ PROGRAM efield_main
 
         ! (4a) Calculate the distances
         !CALL cell_list_distance(r, r, box, cell_length, rc_sq, ll_dr, ll_id1, ll_id2, ll_count, same_array=.true.)
-        CALL double_loop_distance(r_osc, r_osc, L, rc_sq, dr, id1, id2 &
+        CALL double_loop_distance(r, r, L, rc_sq, dr, id1, id2 &
                     , drcount, same_array=.true., cell_length=0.0 &
                     , load_balance=load_balance, verbosity=0)
 
-        write(*,*) "Found ", drcount, "distances"
+        IF (rank == 0) THEN
+            write(*,*) "Found ", drcount, "distances"
+            CALL pick_subset(dr, id1, id2, bonds, osc_bnd_indices)
+            write(*,*) "Found ", size(osc_bnd_indices), "osc distances"
+        END IF
 
         CALL MPI_BARRIER(MPI_COMM_WORLD, ierror)
         ! (4b) Turn distances into the electric field
@@ -161,7 +173,7 @@ PROGRAM efield_main
         ! (5) Write out to a file
         ! Lets rank 0 move onto reading in the next coords
         ! while the other ranks write out.
-        if (rank /= 0) THEN
+        if (rank == 0) THEN
             write(*,*) "Finished frame", frame
         END IF
 
