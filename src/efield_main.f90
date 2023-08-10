@@ -55,7 +55,10 @@ PROGRAM efield_main
     INTEGER :: drcount, ntmp, ocount
     LOGICAL :: load_balance
     LOGICAL :: include_vector
-    REAL, ALLOCATABLE :: dr_comps(:,:)
+    REAL, ALLOCATABLE :: drx(:), dry(:), drz(:)
+
+    ! Electric field variables
+    REAL, ALLOCATABLE :: efield(:)
 
 
     ! MPI Variables
@@ -162,15 +165,13 @@ PROGRAM efield_main
         CALL double_loop_distance(r, r, L, rc_sq, dr, id1, id2 &
                     , drcount, same_array=.true., cell_length=0.0 &
                     , load_balance=load_balance, include_vector=include_vector &
-                    , dist_components=dr_comps, verbosity=0)
+                    , drx=drx, dry=dry, drz=drz, verbosity=0)
 
         IF (rank == 0) THEN
-            write(*,*) "Found ", drcount, "distances"
-            CALL pick_subset(dr, id1, id2, bonds, osc_bnd_indices)
-            write(*,*) "Found ", size(osc_bnd_indices), "osc distances"
-            i = osc_bnd_indices(1)
-            WRITE(*,*) dr_comps(i,:)
-            write(*,*) sqrt(sum(dr_comps(i,:)**2.))
+            write(*,*) "Found ", drcount, "Distances Total"
+
+            CALL calculate_field(bonds, drx, dry, drz, dr, id1, id2, charges, efield)
+            
         END IF
 
         CALL MPI_BARRIER(MPI_COMM_WORLD, ierror)
@@ -187,6 +188,10 @@ PROGRAM efield_main
     END DO 
 
     deallocate(r, charges, oscs)
+
+    IF (ALLOCATED(efield)) THEN
+        deallocate(efield)
+    END IF
 
     CALL MPI_FINALIZE(ierror)
 

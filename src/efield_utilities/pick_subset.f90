@@ -1,4 +1,4 @@
-SUBROUTINE pick_subset(dr, id1, id2, bonds, osc_indices)
+SUBROUTINE pick_subset(id1, id2, bonds, osc_indices)
     ! *********************************************************************
     ! 
     !
@@ -11,7 +11,6 @@ SUBROUTINE pick_subset(dr, id1, id2, bonds, osc_indices)
     IMPLICIT NONE
 
     ! Input
-    REAL, dimension(:), INTENT(IN) :: dr
     INTEGER, dimension(:), INTENT(IN) :: id1, id2
     INTEGER, dimension(:,:), INTENT(IN) :: bonds
 
@@ -30,7 +29,7 @@ SUBROUTINE pick_subset(dr, id1, id2, bonds, osc_indices)
 
     count = 0
     DO i=1, size(bonds,1)
-        DO j=1, size(dr)
+        DO j=1, size(id1)
             IF (bonds(i,1) == id1(j) .AND. bonds(i,2) == id2(j)) THEN
                 count = count + 1
                 osc_indices(count) = j
