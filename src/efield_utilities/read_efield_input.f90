@@ -1,5 +1,5 @@
 SUBROUTINE read_efield_input(inputfile, natoms, nframes, n_osc, rc &
-                        , charges, oscs, traj_file, traj_format)
+                        , charges, oscs, bonds, traj_file, traj_format)
     ! This subroutine reads an electric field calculation input file for
     ! use to generate field files for a spectroscopy calculation.
 
@@ -12,6 +12,7 @@ SUBROUTINE read_efield_input(inputfile, natoms, nframes, n_osc, rc &
     !   n_osc : Number of oscillators in the simulation (Integer)
     !   charges : Simulation charges (1D Array of size natoms)
     !   oscs : Mapping of atoms to oscillators (1D Array of size natoms)
+    !   bonds: Mapping of bonds in the system (2D Array of size n_osc, 2)
     !   traj_file : Trajectory filename (Character)
     !   traj_format : Integer (1 = xtc, 2 = xyz)
     ! 
@@ -28,9 +29,11 @@ SUBROUTINE read_efield_input(inputfile, natoms, nframes, n_osc, rc &
     REAL, INTENT(OUT) :: rc
     REAL, ALLOCATABLE, INTENT(OUT) :: charges(:)
     INTEGER, ALLOCATABLE, INTENT(OUT) :: oscs(:)
+    INTEGER, ALLOCATABLE, INTENT(OUT) :: bonds(:,:)
     ! Local Variables
     INTEGER :: traj_format
-    CHARACTER(LEN=40) :: charge_file, osc_file, traj_file
+    CHARACTER(LEN=40) :: charge_file, osc_file, traj_file, bond_file
+
     write(*,*) TRIM(inputfile)
     ! Open the input file
     OPEN(21, FILE=TRIM(inputfile), STATUS="OLD")
@@ -39,7 +42,7 @@ SUBROUTINE read_efield_input(inputfile, natoms, nframes, n_osc, rc &
     READ(21,*)  ! Trajectory file name, format of trajectory (1:xtc, 2:xyz)
     READ(21,*) traj_file, traj_format
     READ(21,*)  ! charge_file name, oscillator_name
-    READ(21,*) charge_file, osc_file
+    READ(21,*) charge_file, osc_file, bond_file
     READ(21,*) 
     READ(21,*) natoms, nframes
     READ(21,*) 
@@ -48,8 +51,10 @@ SUBROUTINE read_efield_input(inputfile, natoms, nframes, n_osc, rc &
     ALLOCATE(charges(natoms))
     ALLOCATE(oscs(natoms))
 
+
     CALL read_charges(charge_file, natoms, charges)
     CALL read_osc(osc_file, natoms, oscs, n_osc)
+    CALL read_osc_bonds(bond_file, bonds) ! Allocates bonds
 
 
     CLOSE(21)

@@ -1,31 +1,46 @@
-SUBROUTINE pick_subset(r, osc, r_osc)
+SUBROUTINE pick_subset(dr, id1, id2, bonds, osc_indices)
+    ! *********************************************************************
+    ! 
+    !
+    ! Input:
+    !  
+    ! Output:
+    ! 
+    ! *********************************************************************
 
-    REAL, DIMENSION(:,:), INTENT(IN) :: r
-    INTEGER, DIMENSION(:), INTENT(IN) :: osc
+    IMPLICIT NONE
 
-    REAL, ALLOCATABLE, INTENT(OUT) :: r_osc(:,:)
+    ! Input
+    REAL, dimension(:), INTENT(IN) :: dr
+    INTEGER, dimension(:), INTENT(IN) :: id1, id2
+    INTEGER, dimension(:,:), INTENT(IN) :: bonds
 
-    INTEGER :: i, count, n_osc
+    ! Output
+    INTEGER, ALLOCATABLE, INTENT(out) :: osc_indices(:)
 
-    IF (size(osc) /= size(r,1)) THEN
-        PRINT *, "ERROR: size(osc) /= size(r,1)"
-        STOP
+    ! Local
+    INTEGER :: i, j
+    INTEGER :: count
+
+    ! Could do an MPI SCATTER here, but not necessary
+
+    IF (.NOT. ALLOCATED(osc_indices)) THEN
+        ALLOCATE(osc_indices(size(bonds,1)))
     END IF
 
-    n_osc = sum(osc)
-    write(*,*) "n_osc = ", n_osc
-    IF (.NOT. ALLOCATED(r_osc)) THEN
-        ALLOCATE(r_osc(n_osc, 3))
-    END IF
-
-    count = 1
-    DO i=1, n_osc
-        IF (osc(i) == 1) THEN
-            r_osc(count,:) = r(i,:)
-            count = count + 1
-        END IF
+    count = 0
+    DO i=1, size(bonds,1)
+        DO j=1, size(dr)
+            IF (bonds(i,1) == id1(j) .AND. bonds(i,2) == id2(j)) THEN
+                count = count + 1
+                osc_indices(count) = j
+            ELSE IF (bonds(i,1) == id2(j) .AND. bonds(i,2) == id1(j)) THEN
+                count = count + 1
+                osc_indices(count) = j
+            END IF
+        END DO
     END DO
 
 
 
-END SUBROUTINE pick_subset
+END SUBROUTINE
