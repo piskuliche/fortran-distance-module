@@ -33,13 +33,13 @@ program distance_calculation
     CALL MPI_BARRIER(MPI_COMM_WORLD, ierror)
     CALL unit_testing()
     CALL MPI_BARRIER(MPI_COMM_WORLD, ierror)
-    CALL test_timing_comparison(5000, rc, elapsed_time)
-    IF ( rank == 0) THEN
-        WRITE(*,*) 5000, " atoms"
-        WRITE(*,*) "Elapsed time cell-list: ", elapsed_time(1), " seconds"
-        WRITE(*,*) "Elapsed time double loop: ", elapsed_time(2), " seconds"
-        WRITE(15,*) 5000, elapsed_time(1), elapsed_time(2)
-    ENDIF
+    !CALL test_timing_comparison(5000, rc, elapsed_time)
+    !IF ( rank == 0) THEN
+    !    WRITE(*,*) 5000, " atoms"
+    !    WRITE(*,*) "Elapsed time cell-list: ", elapsed_time(1), " seconds"
+    !    WRITE(*,*) "Elapsed time double loop: ", elapsed_time(2), " seconds"
+    !    WRITE(15,*) 5000, elapsed_time(1), elapsed_time(2)
+    !ENDIF
 
     CLOSE(15)
 
