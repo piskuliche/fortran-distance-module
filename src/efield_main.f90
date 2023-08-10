@@ -1,7 +1,7 @@
 PROGRAM efield_main
 
     USE MPI_F08
-    use gmxfort_trajectory
+    USE coordinates_module
     USE efield_module
     use distance_module
     use linked_lists
@@ -22,8 +22,6 @@ PROGRAM efield_main
     ! -> end loop
 
     IMPLICIT NONE
-    
-    type (Trajectory) :: trj
 
     ! Command Line would eventually be nice for this one
     CHARACTER(LEN=40) :: inputfile
@@ -32,18 +30,22 @@ PROGRAM efield_main
     INTEGER :: i, j, k
     INTEGER :: frame
 
+    INTEGER :: boxunit, trjunit
+
     ! Efield Input Subroutine Arguments
     INTEGER :: natoms, nframes, n_osc, traj_format
-    REAL, ALLOCATABLE :: charges(:)
-    REAL :: rc, rc_sq
+    REAL, ALLOCATABLE :: charges(:) 
     INTEGER, ALLOCATABLE :: oscs(:)
+
+    REAL :: rc, rc_sq
+
     CHARACTER(len=40) :: traj_fname
 
     ! Trajectory variables
-    REAL, ALLOCATABLE :: r_osc(:,:), r(:,:)
+    REAL, ALLOCATABLE :: r(:,:), r_osc(:,:)
     REAL, DIMENSION(3) :: coord, L
     REAL, DIMENSION(3,3) :: box
-    REAL, DIMENSION(3,3) :: trj_cell
+    REAL, DIMENSION(3,3) :: cell
 
     ! Distance variables
     REAL, ALLOCATABLE :: dr(:)
@@ -61,6 +63,11 @@ PROGRAM efield_main
     CALL MPI_COMM_SIZE(MPI_COMM_WORLD, nranks, ierror)
     CALL MPI_COMM_RANK(MPI_COMM_WORLD, rank, ierror)
 
+    ! Set unit numbers
+    boxunit = 10
+    trjunit = 11
+
+    inputfile = "../test_files/test_input.inp"
     ! (1 & 2) Reads in the input file, the charges, and the oscilators
     IF (rank == 0) THEN
         CALL read_efield_input(inputfile & ! Input
@@ -68,44 +75,70 @@ PROGRAM efield_main
 
         IF (traj_format == 1) THEN
             WRITE(*,*) "Trajectory filetype is XTC"
-            call trj%open(trim(traj_fname),"index.ndx")
+            WRITE(*,*) "This hasn't been implemented yet - stopping!"
+            STOP 1
+            !WRITE(*,*) trim(traj_fname)
+            !call trj%open(traj_fname)
+            !WRITE(*,*) "Opened!"
         ELSE IF (traj_format == 2) THEN
-            WRITE(*,*) "Support for XYZ filetypes has not been implemented yet"
-            WRITE(*,*) "Stopping program."
-            STOP
+            WRITE(*,*) "Trajectory filetype is XYZ"
+            open(trjunit, file=traj_fname, status='old', action='read')
+            open(boxunit, file="../../L.dat", status='old', action='read')
         ELSE
             WRITE(*,*) "Error: Only supported options are [1] or [2] for traj_format"
             WRITE(*,*) "Stopping program."
             STOP
         END IF
-
         rc_sq = rc**2.
     END IF
+    WRITE(*,*) "rank", rank, "has read the input file"
+
     ! Broadcast input information to all ranks
+    CALL MPI_BCAST(natoms, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierror)
+    CALL MPI_BARRIER(MPI_COMM_WORLD,ierror)
+
+    IF (rank > 0) THEN
+        ALLOCATE(r(natoms,3))
+    END IF
+
+    ! These are allocated already on rank 0 in the read_efield_input subroutine
+    IF (rank > 0) THEN
+        ALLOCATE(charges(natoms))
+        ALLOCATE(oscs(natoms))
+    END IF
+
     CALL MPI_BARRIER(MPI_COMM_WORLD,ierror)
     CALL MPI_BCAST(rc_sq, 1, MPI_REAL, 0, MPI_COMM_WORLD, ierror)
     CALL MPI_BCAST(charges, size(charges), MPI_REAL, 0, MPI_COMM_WORLD, ierror)
     CALL MPI_BCAST(oscs, size(oscs), MPI_INTEGER, 0, MPI_COMM_WORLD, ierror)
     CALL MPI_BCAST(nframes, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierror)
-    CALL MPI_BCAST(natoms, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierror)
     CALL MPI_BARRIER(MPI_COMM_WORLD,ierror)
+
+    if (rank == 0) THEN
+        WRITE(*,*) "rc_sq: ", rc_sq
+        WRITE(*,*) "nframes: ", nframes
+        WRITE(*,*) "size(charges): ", size(charges)
+        WRITE(*,*) "size(oscs): ", size(oscs)
+    END IF
+
     ! End broadcast
     load_balance  = .true.
 
+    ntmp = 0
+    WRITE(*,*) "rank", rank, "has allocated the charges and oscs arrays"
+    if (rank == 0) THEN
+        WRITE(*,*) "Starting frame loop"
+    END IF
     DO frame=1, nframes
         ! (3) Read Coordinates
         IF (rank == 0) THEN
-            ntmp = trj%read_next(1)
-            box = trj%box(1)
-            L(1) = box(1,1)
-            L(2) = box(2,2)
-            L(3) = box(3,3)
-            ! Read the 
-            DO i=1, natoms 
-                coord(:) = trj%x(1,i)
-                r(i,:)= coord(:)
-            END DO 
+            write(*,*) "Reading frame", frame
+            CALL read_next_xyz(trjunit, r)
+            CALL read_next_L(boxunit, L)
+            write(*,*) "Read", ntmp, "atoms"
+            write(*,*) "L:", L
         END IF
+        WRITE(*,*) "Rank", rank, "is waiting"
 
         ! Broadcast the coordinates to all ranks
         CALL MPI_BARRIER(MPI_COMM_WORLD, ierror)
@@ -115,9 +148,11 @@ PROGRAM efield_main
 
         ! (4a) Calculate the distances
         !CALL cell_list_distance(r, r, box, cell_length, rc_sq, ll_dr, ll_id1, ll_id2, ll_count, same_array=.true.)
-        CALL double_loop_distance(r, r, L, rc_sq, dr, id1, id2 &
+        CALL double_loop_distance(r_osc, r_osc, L, rc_sq, dr, id1, id2 &
                     , drcount, same_array=.true., cell_length=0.0 &
                     , load_balance=load_balance, verbosity=0)
+
+        write(*,*) "Found ", drcount, "distances"
 
         CALL MPI_BARRIER(MPI_COMM_WORLD, ierror)
         ! (4b) Turn distances into the electric field
@@ -132,15 +167,9 @@ PROGRAM efield_main
 
     END DO 
 
+    deallocate(r, charges, oscs)
 
-
-    
-    
-
-
-    
-
-    
+    CALL MPI_FINALIZE(ierror)
 
 
 END PROGRAM efield_main
