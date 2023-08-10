@@ -1,5 +1,6 @@
 add_executable(distfort main.f90)
 add_executable(efield_fort efield_main.f90)
+#add_executable(test_fort test_main.f90)
 
 add_subdirectory(coordinates)
 add_subdirectory(distances)
@@ -44,5 +45,6 @@ target_link_libraries(efield_fort
     efield_module
   PUBLIC
     MPI
-    gmxfort
-  )
+)
+
+#target_link_libraries(test_fort)
