@@ -1,6 +1,6 @@
 subroutine double_loop_distance(r1, r2, box, rc_sq &
         , dists, atom1, atom2, count, same_array, cell_length, load_balance &
-        , include_vector, dist_components, verbosity)
+        , include_vector, drx, dry, drz, verbosity)
     ! This subroutine calculates the distance between all pairs of atoms in a system
     ! using a double loop.
     !
@@ -35,7 +35,7 @@ subroutine double_loop_distance(r1, r2, box, rc_sq &
         REAL, ALLOCATABLE, INTENT(out) :: dists(:)
         INTEGER, ALLOCATABLE, INTENT(out) :: atom1(:), atom2(:)
         INTEGER, INTENT(out) :: count    ! Number of pairs found
-        REAL, ALLOCATABLE, INTENT(out), optional :: dist_components(:,:)
+        REAL, ALLOCATABLE, INTENT(out), optional :: drx(:), dry(:), drz(:)
 
         ! Local Variables *****************************************************
         INTEGER :: i, j, di ! Loop Indices
@@ -59,7 +59,6 @@ subroutine double_loop_distance(r1, r2, box, rc_sq &
         REAL, ALLOCATABLE :: tmp_components(:,:)! Temporary array for expanding storage arrays
 
         INTEGER, ALLOCATABLE :: counts(:), displs(:), ifinishes(:), istarts(:)
-        INTEGER, ALLOCATABLE :: arr_counts(:), arr_displs(:)
 
         INTEGER :: ncalcs, iprev
         ! ************************************************************************
@@ -68,14 +67,12 @@ subroutine double_loop_distance(r1, r2, box, rc_sq &
 
         ALLOCATE(counts(nranks))
         ALLOCATE(displs(nranks))
-        ALLOCATE(arr_displs(nranks))
-        ALLOCATE(arr_counts(nranks))
 
 
         IF (ALLOCATED(dists)) THEN
             dists=0; atom1=0; atom2=0
-            IF (present(dist_components)) THEN
-                dist_components =0.0
+            IF (present(drx)) THEN
+                drx = 0; dry = 0; drz = 0
             END IF
         END IF
         
@@ -169,11 +166,10 @@ subroutine double_loop_distance(r1, r2, box, rc_sq &
                     rsq = periodic_distance2(r1(i,:), r2(j,:), box)
                 ELSE
                     dr_arr = periodic_distance_and_vector(r1(i,:), r2(j,:), box)
-                    rsq = dr_arr(4) **2.0
+                    rsq = dr_arr(4)**2.0
                 END IF
                 ! Distance cutoff & store non-zero elements
                 If (rsq < rc_sq) Then
-                    write(*,*) dr_arr(1), dr_arr(2), dr_arr(3)
                     dr_count = dr_count + 1
                     
                     ! This code does dynamics reallocation if needed to increase the size of the arrays
@@ -227,7 +223,7 @@ subroutine double_loop_distance(r1, r2, box, rc_sq &
         CALL MPI_REDUCE(dr_count, count, 1, MPI_INTEGER, MPI_SUM, 0, MPI_COMM_WORLD, ierror)
 
         allocate(dists(count)); allocate(atom1(count)); allocate(atom2(count))
-        allocate(dist_components(count,3))
+        allocate(drx(count), dry(count), drz(count))
 
         CALL MPI_GATHER(dr_count, 1, MPI_INTEGER, counts, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierror)
 
@@ -238,28 +234,31 @@ subroutine double_loop_distance(r1, r2, box, rc_sq &
             END DO
             !write(*,*) counts(:)
             !write(*,*) displs(:)
-
-            DO i=1,nranks
-                arr_counts = counts(i)*3
-            END DO
-            arr_displs(1) = 0
-            DO i=2, nranks
-                arr_displs(i) = sum(arr_counts(1:i-1))
-            END DO
         END IF
+
+        WRITE(*,*) "rank", rank, "hist the gatherv calls"
 
         CALL MPI_GATHERV(dr, dr_count, MPI_REAL, dists, counts, displs, MPI_REAL, 0, MPI_COMM_WORLD, ierror)
         CALL MPI_GATHERV(id1, dr_count, MPI_INTEGER, atom1, counts, displs, MPI_INTEGER, 0, MPI_COMM_WORLD, ierror)
         CALL MPI_GATHERV(id2, dr_count, MPI_INTEGER, atom2, counts, displs, MPI_INTEGER, 0, MPI_COMM_WORLD, ierror)
-        CALL MPI_GATHERV(dr_components, dr_count*3, MPI_REAL, dist_components &
-                        , arr_counts, arr_displs, MPI_REAL, 0, MPI_COMM_WORLD, ierror)
+        
+        WRITE(*,*) "rank", rank, "hist the last gatherv call"
+        write(*,*) "rank", rank, "has", dr_count, "distances"
+        write(*,*) "rank", rank, "has", size(dr_components), "total distances"
+        CALL MPI_GATHERV(dr_components(:,1), dr_count, MPI_REAL, drx &
+                        , counts, displs, MPI_REAL, 0, MPI_COMM_WORLD, ierror)
+        CALL MPI_GATHERV(dr_components(:,2), dr_count, MPI_REAL, dry &
+                        , counts, displs, MPI_REAL, 0, MPI_COMM_WORLD, ierror)
+        CALL MPI_GATHERV(dr_components(:,3), dr_count, MPI_REAL, drz &
+                        , counts, displs, MPI_REAL, 0, MPI_COMM_WORLD, ierror)
+
+        CALL MPI_BARRIER(MPI_COMM_WORLD,  ierror)
         ! **************************************************************************
         IF (rank == 0) THEN 
             IF (PRESENT(verbosity) .and. verbosity > 0) THEN
                 write(*,*) "double loop distances:", count
             END IF
         ENDIF
-        write(*,*) dist_components(1,:)
 
 
         deallocate(dr)

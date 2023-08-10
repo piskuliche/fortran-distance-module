@@ -1,5 +1,5 @@
 subroutine cell_list_distance(r1, r2, box, cell_length, rc_sq, dists, atom1, atom2 &
-                    , count, same_array, include_vector, dist_components, verbosity)
+                    , count, same_array, include_vector, drx, dry, drz, verbosity)
     ! This subroutine calculates the distance between all pairs of atoms in a system
     ! using a cell linked list. 
     ! 
@@ -49,7 +49,7 @@ subroutine cell_list_distance(r1, r2, box, cell_length, rc_sq, dists, atom1, ato
         integer, intent(out) :: count
         REAL, ALLOCATABLE, INTENT(out) :: dists(:)
         INTEGER, ALLOCATABLE, INTENT(out) :: atom1(:), atom2(:)
-        REAL, ALLOCATABLE, INTENT(out), optional :: dist_components(:,:)
+        REAL, ALLOCATABLE, INTENT(out), optional :: drx(:), dry(:), drz(:)
         
         ! Local Variables *****************************************************
         integer :: i, j, k, l, m, n 
@@ -61,7 +61,8 @@ subroutine cell_list_distance(r1, r2, box, cell_length, rc_sq, dists, atom1, ato
         real :: rsq   
         REAL, ALLOCATABLE :: dr(:)
         INTEGER, ALLOCATABLE :: id1(:), id2(:) 
-        REAL, ALLOCATABLE :: dr_components(:,:)           
+        REAL, ALLOCATABLE :: dr_components(:,:)
+           
 
         integer, dimension(3) :: ir         
         real, dimension(1000) :: dr_tmp ! Temporary array for storing from cell_internal_distance
@@ -95,8 +96,10 @@ subroutine cell_list_distance(r1, r2, box, cell_length, rc_sq, dists, atom1, ato
         counts = 0; displs=0
         IF (ALLOCATED(dists)) THEN
             dists=0; atom1=0; atom2=0
-            IF (present(dist_components)) THEN
-                dist_components =0.0
+            IF (present(drx)) THEN
+                drx =0.0
+                dry=0.0
+                drz=0.0
             END IF
         END IF
 
@@ -277,13 +280,15 @@ subroutine cell_list_distance(r1, r2, box, cell_length, rc_sq, dists, atom1, ato
         ! (1b) Allocate the output arrays based on this total count
         IF (ALLOCATED(dists)) THEN
             deallocate(dists, atom1, atom2)
-            IF (present(dist_components)) THEN
-                deallocate(dist_components)
+            IF (present(drx)) THEN
+                deallocate(drx, dry, drz)
             ENDIF
         END IF
         allocate(dists(count), atom1(count), atom2(count))
-        IF (present(dist_components)) THEN
-            allocate(dist_components(count,3))
+        IF (present(drx)) THEN
+            allocate(drx(count))
+            allocate(dry(count))
+            allocate(drz(count))
         ENDIF
         
         ! (2) Gather the counts from each rank into a total array of counts
@@ -303,7 +308,15 @@ subroutine cell_list_distance(r1, r2, box, cell_length, rc_sq, dists, atom1, ato
         CALL MPI_GATHERV(dr, rank_count, MPI_REAL, dists, counts, displs, MPI_REAL, 0, MPI_COMM_WORLD, ierror)
         CALL MPI_GATHERV(id1, rank_count, MPI_INTEGER, atom1, counts, displs, MPI_INTEGER, 0, MPI_COMM_WORLD, ierror)
         CALL MPI_GATHERV(id2, rank_count, MPI_INTEGER, atom2, counts, displs, MPI_INTEGER, 0, MPI_COMM_WORLD, ierror)
+        
+        CALL MPI_GATHERV(dr_components(:,1), rank_count, MPI_REAL, drx &
+                        , counts, displs, MPI_REAL, 0, MPI_COMM_WORLD, ierror)
+        CALL MPI_GATHERV(dr_components(:,2), rank_count, MPI_REAL, dry &
+                        , counts, displs, MPI_REAL, 0, MPI_COMM_WORLD, ierror)
+        CALL MPI_GATHERV(dr_components(:,3), rank_count, MPI_REAL, drz &
+                        , counts, displs, MPI_REAL, 0, MPI_COMM_WORLD, ierror)
 
+        CALL MPI_BARRIER(MPI_COMM_WORLD,  ierror)
         IF (rank == 0) THEN
             IF (PRESENT(verbosity) .and. verbosity > 0) THEN
                 write(*,*) "Cell List Distances: ", count
