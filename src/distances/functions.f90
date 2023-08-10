@@ -66,7 +66,7 @@
             ! Calculate the distance between the two atoms
             dr_tmp(i) = r1(i) - r2(i)
             ! Apply periodic boundary conditions
-            dr_arr(i) = dr_tmp(i) - box(i)*nint(dr_tmp(i)/box(i))
+            dr_tmp(i) = dr_tmp(i) - box(i)*nint(dr_tmp(i)/box(i))
         EndDo
         ! Calculate distance
         dr = sqrt(sum(dr_tmp**2))
