@@ -54,6 +54,8 @@ PROGRAM efield_main
     INTEGER, ALLOCATABLE :: id1(:), id2(:)
     INTEGER :: drcount, ntmp, ocount
     LOGICAL :: load_balance
+    LOGICAL :: include_vector
+    REAL, ALLOCATABLE :: dr_comps(:,:)
 
 
     ! MPI Variables
@@ -69,6 +71,7 @@ PROGRAM efield_main
     ! Set unit numbers
     boxunit = 10
     trjunit = 11
+    include_vector=.true.
 
     inputfile = "../test_files/test_input.inp"
     ! (1 & 2) Reads in the input file, the charges, and the oscilators
@@ -158,12 +161,16 @@ PROGRAM efield_main
         !CALL cell_list_distance(r, r, box, cell_length, rc_sq, ll_dr, ll_id1, ll_id2, ll_count, same_array=.true.)
         CALL double_loop_distance(r, r, L, rc_sq, dr, id1, id2 &
                     , drcount, same_array=.true., cell_length=0.0 &
-                    , load_balance=load_balance, verbosity=0)
+                    , load_balance=load_balance, include_vector=include_vector &
+                    , dist_components=dr_comps, verbosity=0)
 
         IF (rank == 0) THEN
             write(*,*) "Found ", drcount, "distances"
             CALL pick_subset(dr, id1, id2, bonds, osc_bnd_indices)
             write(*,*) "Found ", size(osc_bnd_indices), "osc distances"
+            i = osc_bnd_indices(1)
+            WRITE(*,*) dr_comps(i,:)
+            write(*,*) sqrt(sum(dr_comps(i,:)**2.))
         END IF
 
         CALL MPI_BARRIER(MPI_COMM_WORLD, ierror)

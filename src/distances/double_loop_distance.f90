@@ -45,6 +45,8 @@ subroutine double_loop_distance(r1, r2, box, rc_sq &
         INTEGER :: istart, istop,  ncalc
         INTEGER :: dr_count
 
+        REAL, DIMENSION(4) :: dr_arr
+
         INTEGER(kind=8) :: nper, ncoords
 
 
@@ -52,9 +54,12 @@ subroutine double_loop_distance(r1, r2, box, rc_sq &
         INTEGER, DIMENSION(3,500) :: map    ! Map of bin indices
 
         REAL, ALLOCATABLE :: dr(:), tmpdr(:) ! TEMPORARY Distance
+        REAL, ALLOCATABLE :: dr_components(:,:)
         INTEGER, ALLOCATABLE :: id1(:), id2(:), tmp1(:), tmp2(:)
         REAL, ALLOCATABLE :: tmp_components(:,:)! Temporary array for expanding storage arrays
+
         INTEGER, ALLOCATABLE :: counts(:), displs(:), ifinishes(:), istarts(:)
+        INTEGER, ALLOCATABLE :: arr_counts(:), arr_displs(:)
 
         INTEGER :: ncalcs, iprev
         ! ************************************************************************
@@ -63,6 +68,8 @@ subroutine double_loop_distance(r1, r2, box, rc_sq &
 
         ALLOCATE(counts(nranks))
         ALLOCATE(displs(nranks))
+        ALLOCATE(arr_displs(nranks))
+        ALLOCATE(arr_counts(nranks))
 
 
         IF (ALLOCATED(dists)) THEN
@@ -137,7 +144,7 @@ subroutine double_loop_distance(r1, r2, box, rc_sq &
         END IF
 
         ! Allocates the rank data arrays and resizes them if necessary
-        if (.NOT. ALLOCATED (dr) )  THEN
+        IF (.NOT. ALLOCATED (dr) )  THEN
             allocate(dr(1000)); allocate(id1(1000)); allocate(id2(1000))
             allocate(dr_components(1000,3))
         END IF
@@ -161,16 +168,17 @@ subroutine double_loop_distance(r1, r2, box, rc_sq &
                 IF (present(include_vector) .and. .NOT. include_vector) THEN
                     rsq = periodic_distance2(r1(i,:), r2(j,:), box)
                 ELSE
-                    dr_arr = periodic_dstance_and_vector(r1(i,:), r2(j,:), box)
+                    dr_arr = periodic_distance_and_vector(r1(i,:), r2(j,:), box)
                     rsq = dr_arr(4) **2.0
                 END IF
                 ! Distance cutoff & store non-zero elements
                 If (rsq < rc_sq) Then
+                    write(*,*) dr_arr(1), dr_arr(2), dr_arr(3)
                     dr_count = dr_count + 1
                     
                     ! This code does dynamics reallocation if needed to increase the size of the arrays
                     ! This could eventually be made a subroutine - but haven't done that yet.
-                    IF (rank_count + inner_count > size(dr)) THEN
+                    IF (dr_count > size(dr)) THEN
                         IF (PRESENT(verbosity) .and. verbosity > 2) THEN
                             WRITE(*,*) "Rank ", rank, " is reallocating arrays"
                         END IF
@@ -203,7 +211,9 @@ subroutine double_loop_distance(r1, r2, box, rc_sq &
                     dr(dr_count) = rsq
                     id1(dr_count) = i
                     id2(dr_count) = j
-                    dr_components(dr_count,:) = 
+                    IF (present(include_vector) .and.  include_vector) THEN
+                        dr_components(dr_count,:) = dr_arr(1:3)
+                    END IF
                 EndIf
             EndDo
         EndDo
@@ -217,6 +227,7 @@ subroutine double_loop_distance(r1, r2, box, rc_sq &
         CALL MPI_REDUCE(dr_count, count, 1, MPI_INTEGER, MPI_SUM, 0, MPI_COMM_WORLD, ierror)
 
         allocate(dists(count)); allocate(atom1(count)); allocate(atom2(count))
+        allocate(dist_components(count,3))
 
         CALL MPI_GATHER(dr_count, 1, MPI_INTEGER, counts, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierror)
 
@@ -227,22 +238,34 @@ subroutine double_loop_distance(r1, r2, box, rc_sq &
             END DO
             !write(*,*) counts(:)
             !write(*,*) displs(:)
+
+            DO i=1,nranks
+                arr_counts = counts(i)*3
+            END DO
+            arr_displs(1) = 0
+            DO i=2, nranks
+                arr_displs(i) = sum(arr_counts(1:i-1))
+            END DO
         END IF
 
         CALL MPI_GATHERV(dr, dr_count, MPI_REAL, dists, counts, displs, MPI_REAL, 0, MPI_COMM_WORLD, ierror)
         CALL MPI_GATHERV(id1, dr_count, MPI_INTEGER, atom1, counts, displs, MPI_INTEGER, 0, MPI_COMM_WORLD, ierror)
         CALL MPI_GATHERV(id2, dr_count, MPI_INTEGER, atom2, counts, displs, MPI_INTEGER, 0, MPI_COMM_WORLD, ierror)
+        CALL MPI_GATHERV(dr_components, dr_count*3, MPI_REAL, dist_components &
+                        , arr_counts, arr_displs, MPI_REAL, 0, MPI_COMM_WORLD, ierror)
         ! **************************************************************************
         IF (rank == 0) THEN 
             IF (PRESENT(verbosity) .and. verbosity > 0) THEN
                 write(*,*) "double loop distances:", count
             END IF
         ENDIF
+        write(*,*) dist_components(1,:)
 
 
         deallocate(dr)
         deallocate(id1)
         deallocate(id2)
+        deallocate(dr_components)
         deallocate(ifinishes)
         deallocate(istarts)
         DEALLOCATE(counts, displs)
