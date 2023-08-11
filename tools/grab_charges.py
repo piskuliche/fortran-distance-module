@@ -23,6 +23,17 @@ def water_bond_list(nwaters):
     return np.array(output, dtype=int)
 
 
+def water_osc_groups(nwaters):
+    output = []
+    count = 1
+    for water in range(nwaters):
+        output.append(count)
+        output.append(count)
+        output.append(count)
+        count += 1
+    return np.array(output, dtype=int)
+
+
 if __name__ == "__main__":
 
     import MDAnalysis as mda
@@ -34,10 +45,16 @@ if __name__ == "__main__":
 
     charges = aa.charges
 
-    np.savetxt("charges.dat", charges)
+    np.savetxt("charges.dat", charges, fmt="%10.5f")
     nwaters = int(len(charges)/3)
 
     oscs = water_hatom_locs(nwaters)
     bonds = water_bond_list(nwaters)
+    osc_grps = water_osc_groups(nwaters)
     np.savetxt("oscs.dat", oscs, fmt="%d")
-    np.savetxt("bonds.dat", bonds, fmt="%d %d")
+    with open("bonds.dat", 'w') as f:
+        f.write("%d \n" % len(bonds))
+        for bond in bonds:
+            f.write("%d %d \n" % (bond[0], bond[1]))
+
+    np.savetxt("osc_groups.dat", osc_grps, fmt="%d")
