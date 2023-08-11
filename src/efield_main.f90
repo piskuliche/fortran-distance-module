@@ -38,6 +38,7 @@ PROGRAM efield_main
     REAL, ALLOCATABLE :: charges(:) 
     INTEGER, ALLOCATABLE :: oscs(:), osc_bnd_indices(:)
     INTEGER, ALLOCATABLE :: bonds(:,:)
+    INTEGER, ALLOCATABLE :: osc_grps(:)
 
     REAL :: rc, rc_sq
 
@@ -59,6 +60,10 @@ PROGRAM efield_main
 
     ! Electric field variables
     REAL, ALLOCATABLE :: efield(:)
+    REAL, ALLOCATABLE :: dipole_vec(:,:)
+    
+    ! Writing Variables
+    LOGICAL :: init_field_files
 
 
     ! MPI Variables
@@ -82,7 +87,8 @@ PROGRAM efield_main
         ! Read the input file for the run
         ! This also reads the charges, oscillators, and bonds
         CALL read_efield_input(inputfile & ! Input
-       , natoms,  nframes, n_osc, rc, charges, oscs, bonds, traj_fname, traj_format) ! Output
+       , natoms,  nframes, n_osc, rc, charges, oscs, bonds, osc_grps &
+       , traj_fname, traj_format) ! Output
 
         nbonds = size(bonds,1)
         IF (traj_format == 1) THEN
@@ -144,6 +150,8 @@ PROGRAM efield_main
     if (rank == 0) THEN
         WRITE(*,*) "Starting frame loop"
     END IF
+
+    ! Loop over frames
     DO frame=1, nframes
         ! (3) Read Coordinates
         IF (rank == 0) THEN
@@ -167,15 +175,16 @@ PROGRAM efield_main
                     , load_balance=load_balance, include_vector=include_vector &
                     , drx=drx, dry=dry, drz=drz, verbosity=0)
 
-        IF (rank == 0) THEN
-            write(*,*) "Found ", drcount, "Distances Total"
 
-            CALL calculate_field(bonds, drx, dry, drz, dr, id1, id2, charges, efield)
-            
-        END IF
 
         CALL MPI_BARRIER(MPI_COMM_WORLD, ierror)
         ! (4b) Turn distances into the electric field
+        IF (rank == 0) THEN
+            write(*,*) "Found ", drcount, "Distances Total"
+
+            CALL calculate_field(bonds, drx, dry, drz, dr, id1, id2, charges, osc_grps, efield, dipole_vec)
+            
+        END IF
         
         CALL MPI_BARRIER(MPI_COMM_WORLD, ierror)
         ! (5) Write out to a file
@@ -183,11 +192,21 @@ PROGRAM efield_main
         ! while the other ranks write out.
         if (rank == 0) THEN
             write(*,*) "Finished frame", frame
+            
+            ! Don't overwrite files on higher frames
+            IF (frame == 1) THEN
+                init_field_files = .true.
+            ELSE
+                init_field_files = .false.
+            END IF
+
+            CALL Write_Field_Files(efield, dipole_vec, initialize=init_field_files)
         END IF
 
     END DO 
 
     deallocate(r, charges, oscs)
+    IF (ALLOCATED(osc_grps)) DEALLOCATE(osc_grps)
 
     IF (ALLOCATED(efield)) THEN
         deallocate(efield)
