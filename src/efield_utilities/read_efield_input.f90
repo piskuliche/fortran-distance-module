@@ -34,7 +34,8 @@ SUBROUTINE read_efield_input(inputfile, natoms, nframes, n_osc, rc &
     INTEGER, ALLOCATABLE, INTENT(OUT) :: osc_grps(:)
     ! Local Variables
     INTEGER :: traj_format
-    CHARACTER(LEN=40) :: charge_file, osc_file, traj_file, bond_file
+    CHARACTER(LEN=40) :: charge_file, osc_file, osc_grp_file
+    CHARACTER(LEN=40) :: traj_file, bond_file
 
     write(*,*) TRIM(inputfile)
     ! Open the input file
@@ -44,7 +45,9 @@ SUBROUTINE read_efield_input(inputfile, natoms, nframes, n_osc, rc &
     READ(21,*)  ! Trajectory file name, format of trajectory (1:xtc, 2:xyz)
     READ(21,*) traj_file, traj_format
     READ(21,*)  ! charge_file name, oscillator_name
-    READ(21,*) charge_file, osc_file, bond_file
+    READ(21,*) charge_file, bond_file
+    READ(21,*) 
+    READ(21,*) osc_file, osc_grp_file
     READ(21,*) 
     READ(21,*) natoms, nframes
     READ(21,*) 
@@ -60,7 +63,7 @@ SUBROUTINE read_efield_input(inputfile, natoms, nframes, n_osc, rc &
 
 
     CALL read_charges(charge_file, natoms, charges)
-    CALL read_osc(osc_file, natoms, oscs, n_osc, osc_grps) ! Allocates osc_grps
+    CALL read_osc(osc_file, osc_grp_file, natoms, oscs, n_osc, osc_grps) ! Allocates osc_grps
     CALL read_osc_bonds(bond_file, bonds) ! Allocates bonds
 
 
@@ -96,7 +99,7 @@ SUBROUTINE read_charges(charge_file, natoms, charges)
 
 END SUBROUTINE read_charges
 
-SUBROUTINE read_osc(osc_file, natoms, contributes, count, osc_grp)
+SUBROUTINE read_osc(osc_file, osc_grp_file, natoms, contributes, count, osc_grp)
     ! This subroutine reads the oscillator file and stores information
     ! about which atoms to calculate the location of the electric field
     ! and the strength and direction on them. 
@@ -104,7 +107,7 @@ SUBROUTINE read_osc(osc_file, natoms, contributes, count, osc_grp)
     IMPLICIT NONE
 
     ! Input Variables
-    CHARACTER(LEN=*), INTENT(IN) :: osc_file
+    CHARACTER(LEN=*), INTENT(IN) :: osc_file, osc_grp_file
     INTEGER, INTENT(IN) :: natoms
     ! Output Variables
     INTEGER, DIMENSION(natoms), INTENT(OUT) :: contributes(:)
@@ -129,7 +132,7 @@ SUBROUTINE read_osc(osc_file, natoms, contributes, count, osc_grp)
     END DO
     CLOSE(22)
 
-    OPEN(22, FILE="../../osc_groups.dat", STATUS='old')
+    OPEN(22, FILE=trim(osc_grp_file), STATUS='old')
 
     DO i=1, natoms
         READ(22,*) osc_grp(i)
