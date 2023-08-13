@@ -1,8 +1,8 @@
 chargeO -8.339999914169311523e-01
 chargeH1 4.169999957084655762e-01 
 chargeH2 4.169999957084655762e-01
-nwat 477
+nwat 2
 Lx 25.0
 Ly 25.0
 Lz 25.0
-nconfig 10
+nconfig 1
