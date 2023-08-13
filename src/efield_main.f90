@@ -81,7 +81,7 @@ PROGRAM efield_main
     trjunit = 11
     include_vector=.true.
 
-    inputfile = "../test_files/test_input.inp"
+    inputfile = "test_input.inp"
     ! (1 & 2) Reads in the input file, the charges, and the oscilators
     IF (rank == 0) THEN
         ! Read the input file for the run
@@ -101,7 +101,7 @@ PROGRAM efield_main
         ELSE IF (traj_format == 2) THEN
             WRITE(*,*) "Trajectory filetype is XYZ"
             open(trjunit, file=traj_fname, status='old', action='read')
-            open(boxunit, file="../../L.dat", status='old', action='read')
+            open(boxunit, file="L.dat", status='old', action='read')
         ELSE
             WRITE(*,*) "Error: Only supported options are [1] or [2] for traj_format"
             WRITE(*,*) "Stopping program."
