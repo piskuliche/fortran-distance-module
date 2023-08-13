@@ -1,8 +1,8 @@
 # Trajfile, XTC
-"../..//temp.xyz" 2
+"../../traj.xyz" 2
 # chargefile, oscfile
-"../../charges.dat" "../test_files/osc.dat" "../../bonds.dat"
+"../../charges.dat" "../../osc.dat" "../../bonds.dat"
 #natoms nframes
 1431 10
 # rc
-7.8
+3.0
