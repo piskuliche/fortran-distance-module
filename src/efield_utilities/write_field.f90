@@ -89,9 +89,12 @@ SUBROUTINE Write_Individual_Field(unit, field, dipole_vec, initialize)
     write(ext,'(I0.5)') unit
 
     IF (PRESENT(initialize) .and. initialize) THEN
-        OPEN(unit, file="field."//ext, action="write")
+        ! Create a subdirectory for field files
+        CALL Create_Directory("field_files")
+        ! Open file for the first time
+        OPEN(unit, file="field_files/field."//ext, action="write")
     ELSE
-        OPEN(unit, file="field."//ext, status="old", position="append", action="write")   
+        OPEN(unit, file="field_files/field."//ext, status="old", position="append", action="write")   
     END IF
 
     write(unit, '(4F10.5)') field, dipole_vec
@@ -99,3 +102,14 @@ SUBROUTINE Write_Individual_Field(unit, field, dipole_vec, initialize)
     close(unit)
 
 END SUBROUTINE Write_Individual_Field
+
+SUBROUTINE Create_Directory(directory)
+    IMPLICIT NONE
+
+    CHARACTER(len=*), INTENT(IN) :: directory
+
+    CALL system("mkdir -p "//TRIM(directory))
+
+END SUBROUTINE Create_Directory
+
+
