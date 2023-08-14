@@ -13,7 +13,7 @@ SUBROUTINE Read_Field_Files(nframes, nfiles, field, dipole_vec)
     INTEGER :: i
     
     DO i=1, nfiles
-        CALL Read_Individual_Field(i+100, field(i,:), dipole_vec(i,:,:))
+        CALL Read_Individual_Field(i+100, nframes, field(i,:), dipole_vec(i,:,:))
     END DO
 
 END SUBROUTINE Read_Field_Files
@@ -24,6 +24,10 @@ SUBROUTINE Read_Individual_Field(unit, nframes, field, dipole_vec)
     INTEGER, INTENT(IN) :: nframes  ! Number of frames
     REAL, INTENT(OUT) :: field(nframes) ! Field values at each frame
     REAL, INTENT(OUT) :: dipole_vec(nframes,3) ! Dipole vector at each frame
+
+    ! Local
+    CHARACTER(len=40) ext
+    INTEGER :: i
 
     IF (unit < 100) THEN
         WRITE(*,*) "File Unit", unit, "is too small. Must be greater than 100."
