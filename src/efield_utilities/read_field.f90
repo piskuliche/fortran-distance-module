@@ -22,8 +22,8 @@ SUBROUTINE Read_Individual_Field(unit, nframes, field, dipole_vec)
     IMPLICIT NONE
     INTEGER, INTENT(IN) :: unit     ! File unit number
     INTEGER, INTENT(IN) :: nframes  ! Number of frames
-    REAL, INTENT(OUT) :: field(nframes) ! Field values at each frame
-    REAL, INTENT(OUT) :: dipole_vec(nframes,3) ! Dipole vector at each frame
+    REAL, DIMENSION(nframes), INTENT(OUT) :: field ! Field values at each frame
+    REAL, DIMENSION(nframes,3), INTENT(OUT) :: dipole_vec ! Dipole vector at each frame
 
     ! Local
     CHARACTER(len=40) ext
