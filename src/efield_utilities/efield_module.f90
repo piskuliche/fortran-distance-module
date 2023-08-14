@@ -11,5 +11,6 @@ CONTAINS
     INCLUDE "read_osc_bonds.f90"
     INCLUDE "calculate_field.f90"
     INCLUDE "write_field.f90"
+    INCLUDE "read_field.f90"
 
 END MODULE efield_module
