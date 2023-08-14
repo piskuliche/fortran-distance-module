@@ -1,6 +1,6 @@
 SUBROUTINE Read_Spectra_Input(inputfile &
                 , n_osc, ndigits, ntimes, dt, ncorr, nksip, w_resol &
-                , map_w01, map_w12, map_mu, map_x01, map_x12, & 
+                , map_w01, map_w12, map_mu, map_x01, map_x12, map_alpha & 
                 , T1_relax, T1_by_dt, num_Tw, Tw, which_spectra & 
                 , w1_min, w1_max, w3_min, w3_max)
     ! *********************************************************************
@@ -23,7 +23,7 @@ SUBROUTINE Read_Spectra_Input(inputfile &
     INTEGER, INTENT(OUT) ntimes, dt, ncorr, nksip
     REAL,    INTENT(OUT) w_resol
     REAL, DIMENSION(3), INTENT(OUT) :: map_w01, map_w12, map_mu
-    REAL, DIMENSION(2), INTENT(OUT) :: map_x01, map_x12
+    REAL, DIMENSION(2), INTENT(OUT) :: map_x01, map_x12, map_alpha
     REAL, INTENT(OUT) T1_relax, T1_by_dt
     INTEGER, INTENT(OUT) num_Tw
     REAL, ALLOCATABLE, INTENT(OUT) :: Tw(:)
@@ -53,6 +53,8 @@ SUBROUTINE Read_Spectra_Input(inputfile &
     read(11,*)
     read(11,*) map_x12(1), map_x12(2)                   ! x12 map (units of cm^-1 for freq, au for x)
     read(11,*)  
+    read(11,*) map_alpha(1), map_alpha(2)               ! Raman alpha map (units of au for field) 
+    read(11,*) 
     read(11,*) T1_relax                                 ! T1 relaxation time (in fs)
     read(11,*)
     read(11,*) num_Tw                                   ! Number of waiting times
