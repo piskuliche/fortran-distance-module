@@ -1,5 +1,5 @@
 SUBROUTINE read_efield_input(inputfile, natoms, nframes, n_osc, rc &
-                        , charges, oscs, bonds, osc_grps &
+                        , charges, oscs, bonds, osc_grps, grp_count &
                         , traj_file, traj_format)
     ! This subroutine reads an electric field calculation input file for
     ! use to generate field files for a spectroscopy calculation.
@@ -32,6 +32,7 @@ SUBROUTINE read_efield_input(inputfile, natoms, nframes, n_osc, rc &
     INTEGER, ALLOCATABLE, INTENT(OUT) :: oscs(:)
     INTEGER, ALLOCATABLE, INTENT(OUT) :: bonds(:,:)
     INTEGER, ALLOCATABLE, INTENT(OUT) :: osc_grps(:)
+    INTEGER, ALLOCATABLE, INTENT(OUT) :: grp_count(:)
     ! Local Variables
     INTEGER :: traj_format
     CHARACTER(LEN=40) :: charge_file, osc_file, osc_grp_file
@@ -63,7 +64,7 @@ SUBROUTINE read_efield_input(inputfile, natoms, nframes, n_osc, rc &
 
 
     CALL read_charges(charge_file, natoms, charges)
-    CALL read_osc(osc_file, osc_grp_file, natoms, oscs, n_osc, osc_grps) ! Allocates osc_grps
+    CALL read_osc(osc_file, osc_grp_file, natoms, oscs, n_osc, osc_grps, grp_count) ! Allocates grp_count
     CALL read_osc_bonds(bond_file, bonds) ! Allocates bonds
 
 
@@ -99,7 +100,7 @@ SUBROUTINE read_charges(charge_file, natoms, charges)
 
 END SUBROUTINE read_charges
 
-SUBROUTINE read_osc(osc_file, osc_grp_file, natoms, contributes, count, osc_grp)
+SUBROUTINE read_osc(osc_file, osc_grp_file, natoms, contributes, count, osc_grp, grp_count)
     ! This subroutine reads the oscillator file and stores information
     ! about which atoms to calculate the location of the electric field
     ! and the strength and direction on them. 
@@ -113,9 +114,11 @@ SUBROUTINE read_osc(osc_file, osc_grp_file, natoms, contributes, count, osc_grp)
     INTEGER, DIMENSION(natoms), INTENT(OUT) :: contributes(:)
     INTEGER, INTENT(OUT) :: count
     INTEGER, DIMENSION(:), INTENT(OUT) :: osc_grp
+    INTEGER, ALLOCATABLE, INTENT(OUT) :: grp_count(:)
     ! Local Variables
     INTEGER :: i
     INTEGER :: n_osc_grp
+    INTEGER :: max_osc
 
 
     ! Initialize to zero charge
@@ -138,4 +141,51 @@ SUBROUTINE read_osc(osc_file, osc_grp_file, natoms, contributes, count, osc_grp)
         READ(22,*) osc_grp(i)
     END DO
 
+    max_osc = MAXVAL(osc_grp)
+
+    ALLOCATE(grp_count(max_osc))
+
+    grp_count = 0
+
+    DO i=1, natoms
+        grp_count(osc_grp(i)) = grp_count(osc_grp(i)) + 1
+    END DO
+
 END SUBROUTINE read_osc
+
+SUBROUTINE Molecular_Linked_List(osc_grps, group_list, group_head)
+    ! This code takes a list of oscillators and creates a linked list
+    ! This is so that each of these oscillators can then be used to
+    ! calculate the electric field at each of the atoms in the system.
+    ! While maintaining oscillator groups as whole.
+
+    ! This is currently unused.
+
+    IMPlICIT NONE
+    INTEGER, PARAMETER :: max_atoms=100
+    INTEGER, DIMENSION(:), INTENT(IN) :: osc_grps
+    INTEGER, ALLOCATABLE, INTENT(OUT) :: group_list(:), group_head(:)
+    
+    INTEGER :: n_groups, n_values
+
+    INTEGER :: i
+
+
+    n_groups = MAXVAL(osc_grps)
+    n_values = size(osc_grps)
+
+    IF (.NOT. ALLOCATED(group_list)) THEN
+        ALLOCATE(group_list(n_values))
+        ALLOCATE(group_head(n_groups))
+    END IF
+
+    group_head = 0
+    group_list = 0
+
+    DO i=1, n_values
+        group_list(i) = group_head(osc_grps(i))
+        group_head(osc_grps(i)) = i
+    END DO
+
+
+END SUBROUTINE

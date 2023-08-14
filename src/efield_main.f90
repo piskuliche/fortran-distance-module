@@ -39,6 +39,7 @@ PROGRAM efield_main
     INTEGER, ALLOCATABLE :: oscs(:), osc_bnd_indices(:)
     INTEGER, ALLOCATABLE :: bonds(:,:)
     INTEGER, ALLOCATABLE :: osc_grps(:)
+    INTEGER, ALLOCATABLE :: grp_count(:)
 
     REAL :: rc, rc_sq
 
@@ -87,7 +88,7 @@ PROGRAM efield_main
         ! Read the input file for the run
         ! This also reads the charges, oscillators, and bonds
         CALL read_efield_input(inputfile & ! Input
-       , natoms,  nframes, n_osc, rc, charges, oscs, bonds, osc_grps &
+       , natoms,  nframes, n_osc, rc, charges, oscs, bonds, osc_grps, grp_count &
        , traj_fname, traj_format) ! Output
 
         nbonds = size(bonds,1)
@@ -182,7 +183,7 @@ PROGRAM efield_main
         IF (rank == 0) THEN
             write(*,*) "Found ", drcount, "Distances Total"
 
-            CALL calculate_field(bonds, drx, dry, drz, dr, id1, id2, charges, osc_grps, efield, dipole_vec)
+            CALL calculate_field(bonds, drx, dry, drz, dr, id1, id2, charges, osc_grps, grp_count, efield, dipole_vec)
             
         END IF
         
