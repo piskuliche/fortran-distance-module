@@ -33,6 +33,12 @@ target_link_libraries(testing
     MPI
   )
 
+target_include_directories(spectra_module PUBLIC ${FFTW_INCLUDE_DIRS})
+target_link_libraries(spectra_module
+  PUBLIC
+    ${FFTW_DOUBLE_LIB}
+  )
+
 target_link_libraries(distfort
   PRIVATE
     testing
@@ -49,6 +55,11 @@ target_link_libraries(efield_fort
     MPI
 )
 
-target_link_libraries(spec_fort)
+target_link_libraries(spec_fort
+  PRIVATE
+    spectra_module
+    efield_module
+)
+
 
 #target_link_libraries(test_fort)
