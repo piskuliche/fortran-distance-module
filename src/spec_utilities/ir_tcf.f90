@@ -1,4 +1,4 @@
-SUBROUTINE IR_TCF(ntimes, ncorr, nskip, w, mu, tcf)
+SUBROUTINE IR_TCF(ntimes, ncorr, nskip, dt, w, mu, tcf)
     ! *********************************************************************
     ! 
     !
@@ -12,6 +12,7 @@ SUBROUTINE IR_TCF(ntimes, ncorr, nskip, w, mu, tcf)
 
     ! Input
     INTEGER, INTENT(IN) :: ntimes, ncorr, nskip
+    REAL, INTENT(IN) :: dt
     DOUBLE PRECISION, DIMENSION(ntimes) :: w
     DOUBLE PRECISION, DIMENSION(ntimes,3) :: mu
 
@@ -22,7 +23,6 @@ SUBROUTINE IR_TCF(ntimes, ncorr, nskip, w, mu, tcf)
     INTEGER :: i, j, ilag
     DOUBLE PRECISION :: origin_count, phase, mu0_dot_mu
     DOUBLE PRECISION, DIMENSION(3) :: mu0
-    DOUBLE PRECISION :: phase
 
     ! Initialize the complex TCF
     tcf = dcmplx(0.0d0,0.0d0)

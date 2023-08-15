@@ -2,12 +2,13 @@ PROGRAM Spectroscopy
 
     !use MPI_F08
     use efield_module
+    use spectra_module
 
     IMPLICIT NONE
 
     ! Input file Parameters
     CHARACTER(LEN=100), PARAMETER :: inputfile = "spectra_input.dat"
-    INTEGER :: n_osc, ndigits, ntimes, ncorr, nksip
+    INTEGER :: n_osc, ndigits, ntimes, ncorr, nskip
     REAL :: dt, w_resol
     REAL, DIMENSION(3) :: map_w01, map_w12, map_mu
     REAL, DIMENSION(2) :: map_x01, map_x12, map_alpha
@@ -21,10 +22,17 @@ PROGRAM Spectroscopy
     INTEGER :: field_unit
     REAL, ALLOCATABLE :: field(:)
     REAL, ALLOCATABLE :: osc_vec(:,:)
+    DOUBLE PRECISION, ALLOCATABLE :: w(:), mu(:,:)
 
     ! TCF parameters
     DOUBLE COMPLEX, ALLOCATABLE :: tcf(:)
     DOUBLE COMPLEX, ALLOCATABLE :: ir_total_tcf(:)
+
+    ! Frequency Parameter 
+    REAL :: wavg
+
+    ! Loop Variables
+    INTEGER :: i
 
 
     ! 1) Read Calculation Input File
@@ -37,7 +45,7 @@ PROGRAM Spectroscopy
 
     ! 1) READ CALCULATION INPUT FILE
     CALL Read_Spectra_Input(inputfile &
-                , n_osc, ndigits, ntimes, dt, ncorr, nksip, w_resol &
+                , n_osc, ndigits, ntimes, dt, ncorr, nskip, w_resol &
                 , map_w01, map_w12, map_mu, map_x01, map_x12, map_alpha & 
                 , T1_relax, T1_by_dt, num_Tw, Tw, which_spectra & 
                 , w1_min, w1_max, w3_min, w3_max)
@@ -82,26 +90,30 @@ PROGRAM Spectroscopy
     DO i=1, n_osc
         ! Read FIELD File
         field_unit = i + 100
-        CALL Read_Individual_Field(field_unit, field, osc_vec)
+        CALL Read_Individual_Field(field_unit, ntimes, field, osc_vec)
 
         ! Convert field to frequencies (gives w, mu as output)
         w=0.0; mu = 0.0 ! Zero before the subroutine call
         CALL Apply_Empirical_Map(field, osc_vec, map_w01, map_mu, map_x01, w, mu)
 
+        ! SPECTRA CALCULATIONS
         IF (which_spectra == 1) THEN
             ! Calculate IR TCF
-            CALL IR_TCF(ntimes, ncorr, nskip, w, mu, tcf)
+            CALL IR_TCF(ntimes, ncorr, nskip, dt, w, mu, tcf)
             ir_total_tcf(:) = ir_total_tcf(:) + tcf(:)
         ! TODO ADD MORE OPTIONS
         END IF
+
     END DO
+
+    ! Normalize the spectra
     IF (which_spectra == 1) THEN
         ir_total_tcf(:) = ir_total_tcf(:) / dcmplx(n_osc,0d0)
     END IF
 
     ! 3) Calculate the final TCFS and Spectra
     IF (which_spectra == 1) THEN
-        CALL Calculate_IR_Spectra()
+        CALL Calculate_IR_Spectra(ir_total_tcf, T1_relax, dt, ncorr, w_resol, wavg)
     ! TODO: Add more options
     END IF
 

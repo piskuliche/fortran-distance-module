@@ -1,5 +1,5 @@
 SUBROUTINE Read_Spectra_Input(inputfile &
-                , n_osc, ndigits, ntimes, dt, ncorr, nksip, w_resol &
+                , n_osc, ndigits, ntimes, dt, ncorr, nskip, w_resol &
                 , map_w01, map_w12, map_mu, map_x01, map_x12, map_alpha & 
                 , T1_relax, T1_by_dt, num_Tw, Tw, which_spectra & 
                 , w1_min, w1_max, w3_min, w3_max)
@@ -19,18 +19,19 @@ SUBROUTINE Read_Spectra_Input(inputfile &
     CHARACTER(len=*), INTENT(IN) :: inputfile
 
     ! Output
-    INTEGER, INTENT(OUT) n_osc, ndigits
-    INTEGER, INTENT(OUT) ntimes, dt, ncorr, nksip
-    REAL,    INTENT(OUT) w_resol
+    INTEGER, INTENT(OUT) :: n_osc, ndigits
+    INTEGER, INTENT(OUT) :: ntimes, ncorr, nskip
+    REAL, INTENT(OUT) :: dt, w_resol
     REAL, DIMENSION(3), INTENT(OUT) :: map_w01, map_w12, map_mu
     REAL, DIMENSION(2), INTENT(OUT) :: map_x01, map_x12, map_alpha
-    REAL, INTENT(OUT) T1_relax, T1_by_dt
-    INTEGER, INTENT(OUT) num_Tw
+    REAL, INTENT(OUT) :: T1_relax, T1_by_dt
+    INTEGER, INTENT(OUT) :: num_Tw
     REAL, ALLOCATABLE, INTENT(OUT) :: Tw(:)
-    INTEGER, INTENT(OUT) which_spectra
-    REAL, INTENT(OUT) w1_min, w1_max, w3_min, w3_max
+    INTEGER, INTENT(OUT) :: which_spectra
+    REAL, INTENT(OUT) :: w1_min, w1_max, w3_min, w3_max
 
     ! Local
+    INTEGER :: j
 
     ! MPI
 
@@ -97,4 +98,4 @@ SUBROUTINE Read_Spectra_Input(inputfile &
     w3_min = w3_min/cmi_per_au
     w3_max = w3_max/cmi_per_au
     
-END SUBROUTINE
+END SUBROUTINE Read_Spectra_Input

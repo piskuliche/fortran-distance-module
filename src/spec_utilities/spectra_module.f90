@@ -8,5 +8,9 @@ MODULE spectra_module
     DOUBLE PRECISION :: pi=4.0d0*datan(1.0d0)
 
 CONTAINS
+    include "ir_tcf.f90"
+    include "read_spectra_input.f90"
+    include "ir_spectra.f90"
+    include "frequency_map.f90"
 
 END MODULE spectra_module

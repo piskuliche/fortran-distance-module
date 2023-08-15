@@ -3,14 +3,14 @@ SUBROUTINE Apply_Empirical_Map(efield, osc_vec, map_w01, map_mu, map_x01, w, mu)
     IMPLICIT NONE
 
     ! Input
-    REAL, DIMENSION(:) INTENT(IN) :: efield
+    REAL, DIMENSION(:), INTENT(IN) :: efield
     REAL, DIMENSION(:,:), INTENT(IN) :: osc_vec
     REAL, DIMENSION(3), INTENT(IN) :: map_w01, map_mu
     REAL, DIMENSION(2), INTENT(IN) :: map_x01
 
     ! Output
-    REAL, DIMENSION(size(efield)),INTENT(OUT) :: w
-    REAL, DIMENSION(size(efield),3),INTENT(OUT) :: mu
+    DOUBLE PRECISION, DIMENSION(size(efield)), INTENT(OUT) :: w
+    DOUBLE PRECISION, DIMENSION(size(efield),3),INTENT(OUT) :: mu
 
     ! Local
     INTEGER :: i
@@ -23,7 +23,7 @@ SUBROUTINE Apply_Empirical_Map(efield, osc_vec, map_w01, map_mu, map_x01, w, mu)
 
 END SUBROUTINE Apply_Empirical_Map
 
-FUNCTION Get_Frequency(map_w01, efield), RESULT(frequency)
+FUNCTION Get_Frequency(map_w01, efield) RESULT(frequency)
     ! This function applies the traditional quadratic frequency
     ! map used for the empiricall mapping approach to get the 
     ! frequency.
@@ -32,47 +32,50 @@ FUNCTION Get_Frequency(map_w01, efield), RESULT(frequency)
 
     ! Input
     REAL, DIMENSION(3), INTENT(IN) :: map_w01
-    REAL, DIMENSION, INTENT(IN) :: efield
+    REAL, INTENT(IN) :: efield
 
     ! Output
-    REAL, INTENT(OUT) :: frequency
+    DOUBLE PRECISION :: frequency
 
-    frquency = map_w01(1) + map_w01(2)*efield + map_w01(3)*efield**2
+    frequency = map_w01(1) + map_w01(2)*efield + map_w01(3)*efield**2
     
 END FUNCTION Get_Frequency
 
-FUNCTION Get_Transition_Dipole(freq, map_x01, map_mu, efield, osc_vec), RESULT(tr_mu)
+FUNCTION Get_Transition_Dipole(freq, map_x01, map_mu, efield, osc_vec) RESULT(tr_mu)
     IMPLICIT NONE
 
     ! Input
-    REAL, INTENT(IN) :: freq
+    DOUBLE PRECISION, INTENT(IN) :: freq
     REAL, DIMENSION(3), INTENT(IN) :: map_mu
     REAL, DIMENSION(2), INTENT(IN) :: map_x01
+    REAL, INTENT(IN) :: efield
+    REAL, DIMENSION(3) :: osc_vec
 
     ! Output
-    REAL, DIMENSION(3), INTENT(OUT) :: tr_mu
+    REAL, DIMENSION(3) :: tr_mu
 
     ! Local
-    REAL :: xtmp
+    REAL :: xtmp, mutmp
 
     xtmp = map_x01(1) + map_x01(2)*freq
 
     mutmp = map_mu(1) + map_mu(2)*efield + map_mu(3)*efield**2
     
-    mu(:) = osc_vec(:)*mutmp*xtmp
+    tr_mu(:) = osc_vec(:)*mutmp*xtmp
     
-END FUNCTION
+END FUNCTION Get_Transition_Dipole
 
-FUNCTION Get_Transition_Polarizability(freq, map_x01, map_alpha, efield), RESULT(tr_pol)
+FUNCTION Get_Transition_Polarizability(freq, map_x01, map_alpha, efield) RESULT(tr_pol)
     IMPLICIT NONE
 
     ! Input
-    REAL, INTENT(IN) :: freq
-    REAL, DIMENSION(3), INTENT(IN) :: map_mu
+    DOUBLE PRECISION, INTENT(IN) :: freq
     REAL, DIMENSION(2), INTENT(IN) :: map_x01
+    REAL, DIMENSION(2), INTENT(IN) :: map_alpha
+    REAL, INTENT(IN) :: efield
 
     ! Output
-    REAL, INTENT(OUT) :: tr_pol
+    REAL :: tr_pol
 
     ! Local
     REAL :: xtmp
@@ -81,4 +84,4 @@ FUNCTION Get_Transition_Polarizability(freq, map_x01, map_alpha, efield), RESULT
 
     tr_pol = xtmp * (map_alpha(1) + map_alpha(2)*efield)
     
-END FUNCTION
+END FUNCTION Get_Transition_Polarizability
