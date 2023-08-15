@@ -51,6 +51,7 @@ target_link_libraries(efield_fort
     distance_module
     coordinates_module
     efield_module
+    linked_lists
   PUBLIC
     MPI
 )
