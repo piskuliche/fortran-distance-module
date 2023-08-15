@@ -10,6 +10,8 @@ message(STATUS "test")
 
 #find_package(gmxfort CONFIG)
 
+set(FFTW_ROOT "/cm/shared/apps/spack/cpu/opt/spack/linux-centos8-zen2/gcc-10.2.0/fftw-3.3.8-fxnokelozt4zqvy4wnkqgrke5hja5mr2/")
+
 set(CMAKE_Fortran_FLAGS "-O3")
 
 set(CMAKE_Fortran_MODULE_DIRECTORY ${CMAKE_BINARY_DIR}/modules)
