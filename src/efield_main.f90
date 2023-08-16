@@ -1,6 +1,6 @@
 PROGRAM efield_main
 
-    USE MPI_F08
+    USE mpi_f08
     USE coordinates_module
     USE efield_module
     use distance_module

@@ -3,14 +3,13 @@ cmake_minimum_required(VERSION 3.13)
 project(fort-dist LANGUAGES Fortran)
 
 find_package(MPI REQUIRED COMPONENTS Fortran)
+include_directories(${MPI_Fortran_INCLUDE_DIRS})
 message(STATUS "${MPI_Fortran_LIBRARIES}")
 message(STATUS ${MPI_Fortran_INCLUDE_PATH})
 message(STATUS ${MPI_INCLUDE_PATH})
 message(STATUS "test")
 
 #find_package(gmxfort CONFIG)
-
-set(FFTW_ROOT "/cm/shared/apps/spack/cpu/opt/spack/linux-centos8-zen2/gcc-10.2.0/fftw-3.3.8-fxnokelozt4zqvy4wnkqgrke5hja5mr2/")
 
 set(CMAKE_Fortran_FLAGS "-O3")
 
