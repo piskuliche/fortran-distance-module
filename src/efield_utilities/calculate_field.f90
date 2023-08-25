@@ -109,6 +109,7 @@ SUBROUTINE Calculate_Field_Contribution(id1, id2, osc_grps, dr_vec, dr, bond_ato
     REAL, DIMENSION(3), INTENT(IN) :: dr_vec ! Distance vector between atoms id1 and id2
     REAL, INTENT(IN) :: dr ! Distance between atoms id1 and id2
     INTEGER, DIMENSION(2), INTENT(IN) :: bond_atoms ! Atom IDs of the two atoms in the ith bond
+    REAL, DIMENSION(:), INTENT(IN) :: charges ! Charges of each atom
 
     INTEGER, DIMENSION(:), INTENT(INOUT) :: osc_sum ! Sum variable for field contributions based on osc_grps
     REAL, DIMENSION(:,:), INTENT(INOUT) :: field_contribution ! Field contribution from each oscillator group
@@ -147,7 +148,7 @@ SUBROUTINE Calculate_Field_Contribution(id1, id2, osc_grps, dr_vec, dr, bond_ato
 
 END SUBROUTINE Calculate_Field_Contribution
 
-FUNCTION Add_Field(q, dr_vec, dr), RESULT(comp)
+FUNCTION Add_Field(q, dr_vec, dr) RESULT(comp)
     IMPLICIT NONE
 
     REAL, INTENT(IN) :: q ! Charge of atom
