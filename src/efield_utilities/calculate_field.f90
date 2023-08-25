@@ -63,36 +63,10 @@ SUBROUTINE calculate_field(bonds, drx, dry, drz, dr, id1, id2, charges, osc_grps
         newcount = 0
         osc_sum = 0
         field_contribution = 0.0
+        ! Get the field contributions
         DO j=1, SIZE(id1)
-            ! 2) For every distance calculated, check if ith oscillator hatom is involved
-            !    Also check that the two atoms are not in the same oscillator group  
-            ! Then calculate the field contributions
-            jgroup1(j) = osc_grps(id1(j))
-            jgroup2(j) = osc_grps(id2(j))
-            ! Check that the values come from different oscillator groups
-            IF (jgroup1(j) /= jgroup2(j)) THEN
-                IF (id1(j) == bonds(i,2)) THEN
-                    newcount = newcount + 1
-                    field_contribution(jgroup2(j),:) = field_contribution(jgroup2(j),:)  & 
-                        +    charges(id2(j)) * dr_vec(j,:) / sqrt(dr(j))**3
-                    osc_sum(jgroup2(j)) = osc_sum(jgroup2(j)) + 1
-                ELSE IF (id2(j) == bonds(i,2)) THEN
-                    newcount = newcount + 1
-                    field_contribution(jgroup1(j),:) = field_contribution(jgroup1(j),:)  &
-                        +    (-1) *     charges(id1(j)) * dr_vec(j,:) / sqrt(dr(j))**3
-                    osc_sum(jgroup1(j)) = osc_sum(jgroup1(j))+ 1
-                END IF
-                ! Add something to check whether all the atoms in a molecule are present
-                ! in the list of atoms.
-            ELSE
-                ! This section grabs the dipole vector for the oscillator
-                ! It always points towards the hydrogen atom
-                IF (id1(j) == bonds(i,1) .and. id2(j) == bonds(i,2)) THEN
-                    dipole_vec(i,:) = -dr_vec(j,:)/sqrt(dr(j))
-                ELSE IF (id1(j) == bonds(i,2) .and. id2(j) == bonds(i,1)) THEN
-                    dipole_vec(i,:) = dr_vec(j,:)/sqrt(dr(j))
-                END IF
-            END IF
+            CALL Calculate_Field_Contribution(id1(j), id2(j), osc_grps, dr_vec(j,:), dr(j) & 
+                , bonds(i,:), charges, osc_sum, field_contribution, dipole_vec(i,:))
         END DO
 
         DO j=1, max_osc
@@ -105,19 +79,10 @@ SUBROUTINE calculate_field(bonds, drx, dry, drz, dr, id1, id2, charges, osc_grps
             END IF
         END DO 
 
-        
-        IF (i == 1 .or. i == 2) THEN
-            WRITE(*,*) newcount
-            WRITE(*,*) dr_field(i,:)
-        ENDIF
-
         ! Convert units
         dr_field(i,:) = dr_field(i,:) * angperau**2.0
-    END DO
-    
 
-    DO i=1, n_osc
-        !dipole_vec(i,:) = -dr_vec(osc_bnd_indices(i),:)/sqrt(dr(osc_bnd_indices(i)))
+        ! Calculate the final field
         field(i) = dot_product(dr_field(i,:), dipole_vec(i,:))
     END DO
 
@@ -129,3 +94,70 @@ SUBROUTINE calculate_field(bonds, drx, dry, drz, dr, id1, id2, charges, osc_grps
 
     
 END SUBROUTINE calculate_field
+
+
+SUBROUTINE Calculate_Field_Contribution(id1, id2, osc_grps, dr_vec, dr, bond_atoms, charges, osc_sum, field_contribution, dipole)
+! 2) For every distance calculated, check if ith oscillator hatom is involved
+            !    Also check that the two atoms are not in the same oscillator group  
+            ! Then calculate the field contributions
+
+    IMPLICIT NONE
+
+    INTEGER, INTENT(IN) :: id1 ! Atom ID of first atom in distance pair
+    INTEGER, INTENT(IN) :: id2 ! Atom ID of second atom in distance pair
+    INTEGER, DIMENSION(:), INTENT(IN) :: osc_grps ! Oscillator group of each atom
+    REAL, DIMENSION(3), INTENT(IN) :: dr_vec ! Distance vector between atoms id1 and id2
+    REAL, INTENT(IN) :: dr ! Distance between atoms id1 and id2
+    INTEGER, DIMENSION(2), INTENT(IN) :: bond_atoms ! Atom IDs of the two atoms in the ith bond
+
+    INTEGER, DIMENSION(:), INTENT(INOUT) :: osc_sum ! Sum variable for field contributions based on osc_grps
+    REAL, DIMENSION(:,:), INTENT(INOUT) :: field_contribution ! Field contribution from each oscillator group
+    REAL, DIMENSION(3), INTENT(OUT) :: dipole ! Dipole vector for the ith oscillator
+
+
+    INTEGER :: jgroup1, jgroup2
+
+    dipole = 0.0
+
+    jgroup1 = osc_grps(id1)
+    jgroup2 = osc_grps(id2)
+
+    ! Check that the values come from different oscillator groups
+    IF (jgroup1 /= jgroup2 ) THEN
+        IF (id1 == bond_atoms(2)) THEN
+            newcount = newcount + 1
+            field_contribution(jgroup2,:) = field_contribution(jgroup2,:)  & 
+                 + Add_Field(charges(id2), dr_vec, dr)
+            osc_sum(jgroup2) = osc_sum(jgroup2) + 1
+        ELSE IF (id2 == bond_atoms(2)) THEN
+            newcount = newcount + 1
+            field_contribution(jgroup1,:) = field_contribution(jgroup1,:)  &
+                 - Add_Field(charges(id1), dr_vec, dr)
+            osc_sum(jgroup1) = osc_sum(jgroup1)+ 1
+        END IF
+    ELSE ! Same oscillator group
+        ! This section grabs the dipole vector for the oscillator
+        ! It always points towards the hydrogen atom
+        IF (id1 == bond_atoms(1) .and. id2 == bond_atoms(2)) THEN
+            dipole(:) = -dr_vec(j,:)/sqrt(dr(j))
+        ELSE IF (id1 == bond_atoms(2) .and. id2 == bond_atoms(1)) THEN
+            dipole(:) = dr_vec(j,:)/sqrt(dr(j))
+        END IF
+    END IF
+
+END SUBROUTINE Calculate_Field_Contribution
+
+FUNCTION Add_Field(q, dr_vec, dr), RESULT(comp)
+    IMPLICIT NONE
+
+    REAL, INTENT(IN) :: q ! Charge of atom
+    REAL, DIMENSION(:), INTENT(IN) :: dr_vec ! Vector between atoms
+    REAL, INTENT(IN) :: dr ! Distance between atoms
+
+    REAL :: comp(3)
+
+    comp = 0.0
+
+    comp = q * dr_vec / (sqrt(dr)**3)
+
+END FUNCTION Add_Field
