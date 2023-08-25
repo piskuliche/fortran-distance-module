@@ -140,9 +140,9 @@ SUBROUTINE Calculate_Field_Contribution(id1, id2, osc_grps, dr_vec, dr, bond_ato
         ! This section grabs the dipole vector for the oscillator
         ! It always points towards the hydrogen atom
         IF (id1 == bond_atoms(1) .and. id2 == bond_atoms(2)) THEN
-            dipole(:) = -dr_vec(j,:)/sqrt(dr(j))
+            dipole(:) = -dr_vec(j,:)/sqrt(dr)
         ELSE IF (id1 == bond_atoms(2) .and. id2 == bond_atoms(1)) THEN
-            dipole(:) = dr_vec(j,:)/sqrt(dr(j))
+            dipole(:) = dr_vec(j,:)/sqrt(dr)
         END IF
     END IF
 
