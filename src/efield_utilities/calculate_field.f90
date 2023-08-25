@@ -21,6 +21,9 @@ SUBROUTINE calculate_field(bonds, drx, dry, drz, dr, id1, id2, charges, osc_grps
     INTEGER, ALLOCATABLE :: osc_bnd_indices(:)
     INTEGER, ALLOCATABLE :: jgroup1(:), jgroup2(:), osc_sum(:)
     REAL, DIMENSION(SIZE(drx),3) :: dr_vec
+
+    ! MPI Variables
+    INTEGER :: ierror, nranks, rank
     
     dr_vec(:,1) = drx
     dr_vec(:,2) = dry
@@ -44,7 +47,11 @@ SUBROUTINE calculate_field(bonds, drx, dry, drz, dr, id1, id2, charges, osc_grps
     ALLOCATE(dr_field(n_osc,3))
     ALLOCATE(field_contribution(max_osc,3))
 
-    CALL pick_subset(id1, id2, bonds, osc_bnd_indices)
+    ! First key thing to do is to pick out 
+    ! the distances that are relevant to the oscillators
+    ! pick_subset(id1, id2, bonds, osc_bnd_indices)
+
+    CALL MPI_BARRIER(MPI_COMM_WORLD, ierror)
 
     dr_field = 0.0
     dipole_vec = 0.0
@@ -77,6 +84,14 @@ SUBROUTINE calculate_field(bonds, drx, dry, drz, dr, id1, id2, charges, osc_grps
                 END IF
                 ! Add something to check whether all the atoms in a molecule are present
                 ! in the list of atoms.
+            ELSE
+                ! This section grabs the dipole vector for the oscillator
+                ! It always points towards the hydrogen atom
+                IF (id1(j) == bonds(i,1) .and. id2(j) == bonds(i,2)) THEN
+                    dipole_vec(i,:) = -dr_vec(j,:)/sqrt(dr(j))
+                ELSE IF (id1(j) == bonds(i,2) .and. id2(j) == bonds(i,1)) THEN
+                    dipole_vec(i,:) = dr_vec(j,:)/sqrt(dr(j))
+                END IF
             END IF
         END DO
 
@@ -102,7 +117,7 @@ SUBROUTINE calculate_field(bonds, drx, dry, drz, dr, id1, id2, charges, osc_grps
     
 
     DO i=1, n_osc
-        dipole_vec(i,:) = -dr_vec(osc_bnd_indices(i),:)/sqrt(dr(osc_bnd_indices(i)))
+        !dipole_vec(i,:) = -dr_vec(osc_bnd_indices(i),:)/sqrt(dr(osc_bnd_indices(i)))
         field(i) = dot_product(dr_field(i,:), dipole_vec(i,:))
     END DO
 
