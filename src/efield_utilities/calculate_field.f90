@@ -126,12 +126,10 @@ SUBROUTINE Calculate_Field_Contribution(id1, id2, osc_grps, dr_vec, dr, bond_ato
     ! Check that the values come from different oscillator groups
     IF (jgroup1 /= jgroup2 ) THEN
         IF (id1 == bond_atoms(2)) THEN
-            newcount = newcount + 1
             field_contribution(jgroup2,:) = field_contribution(jgroup2,:)  & 
                  + Add_Field(charges(id2), dr_vec, dr)
             osc_sum(jgroup2) = osc_sum(jgroup2) + 1
         ELSE IF (id2 == bond_atoms(2)) THEN
-            newcount = newcount + 1
             field_contribution(jgroup1,:) = field_contribution(jgroup1,:)  &
                  - Add_Field(charges(id1), dr_vec, dr)
             osc_sum(jgroup1) = osc_sum(jgroup1)+ 1
@@ -140,9 +138,9 @@ SUBROUTINE Calculate_Field_Contribution(id1, id2, osc_grps, dr_vec, dr, bond_ato
         ! This section grabs the dipole vector for the oscillator
         ! It always points towards the hydrogen atom
         IF (id1 == bond_atoms(1) .and. id2 == bond_atoms(2)) THEN
-            dipole(:) = -dr_vec(j,:)/sqrt(dr)
+            dipole(:) = -dr_vec(:)/sqrt(dr)
         ELSE IF (id1 == bond_atoms(2) .and. id2 == bond_atoms(1)) THEN
-            dipole(:) = dr_vec(j,:)/sqrt(dr)
+            dipole(:) = dr_vec(:)/sqrt(dr)
         END IF
     END IF
 
