@@ -113,6 +113,7 @@ SUBROUTINE Calculate_Field_Contribution(id1, id2, osc_grps, dr_vec, dr, bond_ato
 
 
     INTEGER :: jgroup1, jgroup2
+    INTEGER :: j
 
     DO j = 1, size(id1)
         dipole = 0.0
