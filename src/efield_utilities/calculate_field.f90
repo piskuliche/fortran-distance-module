@@ -51,7 +51,7 @@ SUBROUTINE calculate_field(bonds, drx, dry, drz, dr, id1, id2, charges, osc_grps
     ! the distances that are relevant to the oscillators
     ! pick_subset(id1, id2, bonds, osc_bnd_indices)
 
-    CALL MPI_BARRIER(MPI_COMM_WORLD, ierror)
+    !CALL MPI_BARRIER(MPI_COMM_WORLD, ierror)
 
     dr_field = 0.0
     dipole_vec = 0.0
