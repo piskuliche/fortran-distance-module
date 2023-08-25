@@ -13,15 +13,11 @@ add_subdirectory(spec_utilities)
 target_link_libraries(coordinates_module)
 
 target_link_libraries(distance_module
-  PUBLIC
-    MPI
   )
 
 target_link_libraries(linked_lists
   PRIVATE
     distance_module
-  PUBLIC
-    MPI
   )
 
 target_link_libraries(testing 
@@ -29,8 +25,6 @@ target_link_libraries(testing
     distance_module
     linked_lists
     coordinates_module
-  PUBLIC
-    MPI
   )
 
 target_include_directories(spectra_module PUBLIC ${FFTW_INCLUDE_DIRS})
@@ -42,8 +36,6 @@ target_link_libraries(spectra_module
 target_link_libraries(distfort
   PRIVATE
     testing
-  PUBLIC
-    MPI
   )
 
 target_link_libraries(efield_fort
@@ -52,8 +44,6 @@ target_link_libraries(efield_fort
     coordinates_module
     efield_module
     linked_lists
-  PUBLIC
-    MPI
 )
 
 target_link_libraries(spec_fort
