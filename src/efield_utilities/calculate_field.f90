@@ -136,6 +136,7 @@ SUBROUTINE calculate_field(bonds, drx, dry, drz, dr, id1, id2, charges, osc_grps
         , dpy, counts, displs, MPI_REAL, 0, MPI_COMM_WORLD)
     CALL MPI_GATHERV(dpz_proc, rank_count, MPI_REAL &
         , dpz, counts, displs, MPI_REAL, 0, MPI_COMM_WORLD)
+    CALL MPI_BARRIER(MPI_COMM_WORLD, ierror)
     ! TODO: Set rank 0 values for the dipoole
     dipole_vec(:,1) = dpx
     dipole_vec(:,2) = dpy
