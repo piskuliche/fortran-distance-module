@@ -46,7 +46,7 @@ SUBROUTINE calculate_field(bonds, drx, dry, drz, dr, id1, id2, charges, osc_grps
     n_osc_per_rank = n_osc/nranks
     istart = max(1, n_osc_per_rank*rank + 1)
     istop = min(n_osc, n_osc_per_rank*(rank+1))
-    rank_count = istart-istop+1
+    rank_count = istop-istart+1
     WRITE(*,*) "test-mpi-field", istart, istop, rank_count
 
 
