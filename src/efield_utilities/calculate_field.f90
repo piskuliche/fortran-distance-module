@@ -1,4 +1,5 @@
 SUBROUTINE calculate_field(bonds, drx, dry, drz, dr, id1, id2, charges, osc_grps, grp_count, field, dipole_vec)
+    USE MPI_F08
     IMPLICIT NONE
 
     INTEGER, DIMENSION(:,:), INTENT(IN) :: bonds
