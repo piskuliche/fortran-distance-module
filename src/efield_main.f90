@@ -92,8 +92,7 @@ PROGRAM efield_main
         CALL read_efield_input(inputfile & ! Input
        , natoms,  nframes, n_osc, rc, charges, oscs, bonds, osc_grps, grp_count &
        , traj_fname, traj_format) ! Output
-       max_osc = size(grp_count)
-
+        max_osc = size(grp_count)
         nbonds = size(bonds,1)
         IF (traj_format == 1) THEN
             WRITE(*,*) "Trajectory filetype is XTC"
