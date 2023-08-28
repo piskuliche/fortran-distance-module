@@ -118,8 +118,9 @@ SUBROUTINE calculate_field(bonds, drx, dry, drz, dr, id1, id2, charges, osc_grps
 
     ! TODO: Generate counts and displs arrays for gatherv
     IF (rank == 0) THEN
-        DO i = 1, nranks
-            counts(i) = min(n_osc_per_rank*i, n_osc)
+        count(1) = rank_count
+        DO i = 2, nranks
+            counts(i) = min(n_osc_per_rank*i, n_osc) - count(i-1)
         END DO
 
         displs(1) = 0
