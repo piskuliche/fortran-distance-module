@@ -54,18 +54,14 @@ SUBROUTINE calculate_field(bonds, drx, dry, drz, dr, id1, id2, charges, osc_grps
     ! Maximum oscillator group number - sets indexing for
     max_osc = MAXVAL(osc_grps)
     IF ( rank == 0 ) THEN
-        IF (.NOT. ALLOCATED(field)) THEN
 
-            ALLOCATE(field(n_osc))
-            ALLOCATE(dipole_vec(n_osc,3))
-
-        END IF  
         field = 0.0
         dipole_vec = 0.0
         
         ALLOCATE(counts(nranks), displs(nranks))
         ALLOCATE(dpx(n_osc), dpy(n_osc), dpz(n_osc))
     END IF
+    
 
     ALLOCATE(jgroup1(size(id1)), jgroup2(size(id2)))
     ALLOCATE(osc_sum(max_osc))
@@ -144,15 +140,15 @@ SUBROUTINE calculate_field(bonds, drx, dry, drz, dr, id1, id2, charges, osc_grps
         dipole_vec(:,2) = dpy
         dipole_vec(:,3) = dpz
     END IF 
-    WRITE(*,*) "rank val deall", rank, size(jgroup1), size(jgroup2), size(osc_sum), size(dr_field) &
-            , size(field_contribution), size(field_proc), size(dipole_proc)
 
-    !DEALLOCATE(jgroup1)
-    !DEALLOCATE(jgroup2)
-    !DeALLOCATE(osc_sum)
-    !DEALLOCATE(dr_field)
-    !DEALLOCATE(field_contribution)
-    !DEALLOCATE(field_proc)
+    IF (rank == 0) THEN
+
+    DEALLOCATE(jgroup1)
+    DEALLOCATE(jgroup2)
+    DeALLOCATE(osc_sum)
+    DEALLOCATE(dr_field)
+    DEALLOCATE(field_contribution)
+    DEALLOCATE(field_proc)
     IF (rank == 0) THEN
         DEALLOCATE(counts)
         DEALLOCATE(displs)
