@@ -64,8 +64,8 @@ SUBROUTINE calculate_field(bonds, drx, dry, drz, dr, id1, id2, charges, osc_grps
 
     IF (.NOT. ALLOCATED(field)) THEN
 
-            ALLOCATE(field(n_osc))
-            ALLOCATE(dipole_vec(n_osc,3))
+        ALLOCATE(field(n_osc))
+        ALLOCATE(dipole_vec(n_osc,3))
 
     END IF  
 
@@ -147,7 +147,7 @@ SUBROUTINE calculate_field(bonds, drx, dry, drz, dr, id1, id2, charges, osc_grps
         dipole_vec(:,3) = dpz
     END IF 
 
-    IF (rank == 0) THEN
+
 
     DEALLOCATE(jgroup1)
     DEALLOCATE(jgroup2)
