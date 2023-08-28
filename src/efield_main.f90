@@ -187,8 +187,6 @@ PROGRAM efield_main
                     , load_balance=load_balance, include_vector=include_vector &
                     , drx=drx, dry=dry, drz=drz, verbosity=0)
 
-
-
         CALL MPI_BARRIER(MPI_COMM_WORLD, ierror)
         ! (4b) Turn distances into the electric field
         IF (rank == 0) THEN
