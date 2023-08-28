@@ -40,6 +40,7 @@ PROGRAM efield_main
     INTEGER, ALLOCATABLE :: bonds(:,:)
     INTEGER, ALLOCATABLE :: osc_grps(:)
     INTEGER, ALLOCATABLE :: grp_count(:)
+    INTEGER :: max_osc
 
     REAL :: rc, rc_sq
 
@@ -91,6 +92,7 @@ PROGRAM efield_main
         CALL read_efield_input(inputfile & ! Input
        , natoms,  nframes, n_osc, rc, charges, oscs, bonds, osc_grps, grp_count &
        , traj_fname, traj_format) ! Output
+       max_osc = size(grp_count)
 
         nbonds = size(bonds,1)
         IF (traj_format == 1) THEN
@@ -116,6 +118,7 @@ PROGRAM efield_main
     ! Broadcast input information to all ranks
     CALL MPI_BCAST(natoms, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierror)
     CALL MPI_BCAST(nbonds, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierror)
+    CALL MPI_BCAST(max_osc, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierror)
     CALL MPI_BARRIER(MPI_COMM_WORLD,ierror)
 
     IF (rank > 0) THEN
@@ -128,6 +131,7 @@ PROGRAM efield_main
         ALLOCATE(charges(natoms))
         ALLOCATE(oscs(natoms))
         ALLOCATE(osc_grps(natoms))
+        ALLOCATE(grp_count(max_osc))
     END IF
 
     CALL MPI_BARRIER(MPI_COMM_WORLD,ierror)
@@ -137,6 +141,7 @@ PROGRAM efield_main
     CALL MPI_BCAST(nframes, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierror)
     CALL MPI_BCAST(bonds, size(bonds), MPI_INTEGER, 0, MPI_COMM_WORLD, ierror)
     CALL MPI_BCAST(osc_grps, size(osc_grps), MPI_INTEGER, 0, MPI_COMM_WORLD, ierror)
+    CALL MPI_BCAST(grp_count, size(grp_count), MPI_INTEGER, 0, MPI_COMM_WORLD, ierror)
     CALL MPI_BARRIER(MPI_COMM_WORLD,ierror)
 
     if (rank == 0) THEN
