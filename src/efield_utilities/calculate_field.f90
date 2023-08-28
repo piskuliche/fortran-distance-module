@@ -17,6 +17,7 @@ SUBROUTINE calculate_field(bonds, drx, dry, drz, dr, id1, id2, charges, osc_grps
     INTEGER :: max_osc
 
     REAL, ALLOCATABLE :: dr_field(:,:)
+    
     REAL, ALLOCATABLE :: field_contribution(:,:)
     INTEGER, ALLOCATABLE :: osc_bnd_indices(:)
     INTEGER, ALLOCATABLE :: jgroup1(:), jgroup2(:), osc_sum(:)
@@ -24,6 +25,16 @@ SUBROUTINE calculate_field(bonds, drx, dry, drz, dr, id1, id2, charges, osc_grps
 
     ! MPI Variables
     INTEGER :: ierror, nranks, rank
+    INTEGER :: n_osc_per_rank, rank_count
+    INTEGER :: iter, istart, istop ! Iteration variables for each rank
+    REAL, ALLOCATABLE :: field_proc(:) ! MPI field array before gatherv
+    REAL, DIMENSION(3) :: dipole_proc
+    REAL, ALLOCATABLE :: dpx_proc(:), dpy_proc(:), dpz_proc(:)
+    REAL, ALLOCATABLE :: dpx(:), dpy(:), dpz(:)
+    INTEGER, ALLOCATABLE :: counts, displs
+
+    CALL MPI_COMM_RANK(MPI_COMM_WORLD, rank, ierror)
+    CALL MPI_COMM_SIZE(MPI_COMM_WORLD, nranks, ierror)
     
     dr_vec(:,1) = drx
     dr_vec(:,2) = dry
@@ -31,21 +42,34 @@ SUBROUTINE calculate_field(bonds, drx, dry, drz, dr, id1, id2, charges, osc_grps
 
     ! Number of oscillators
     n_osc = SIZE(bonds, 1)
+    n_osc_per_rank = n_osc/nranks
+    istart = max(1, n_osc_per_rank*rank + 1)
+    istop = min(n_osc, n_osc_per_rank*(rank+1))
+    rank_count = istart-istop+1
+
 
     ! Maximum oscillator group number - sets indexing for
     max_osc = MAXVAL(osc_grps)
+    IF ( rank == 0 ) THEN
+        IF (.NOT. ALLOCATED(field)) THEN
 
-    IF (.NOT. ALLOCATED(field)) THEN
+            ALLOCATE(field(n_osc))
+            ALLOCATE(dipole_vec(n_osc,3))
 
-        ALLOCATE(field(n_osc))
-        ALLOCATE(dipole_vec(n_osc,3))
-
-    END IF  
+        END IF  
+        field = 0.0
+        dipole_vec = 0.0
+        
+        ALLOCATE(counts(nranks), displs(nranks))
+        ALLOCATE(dpx(n_osc), dpy(n_osc), dpz(n_osc))
+    END IF
 
     ALLOCATE(jgroup1(size(id1)), jgroup2(size(id2)))
     ALLOCATE(osc_sum(max_osc))
-    ALLOCATE(dr_field(n_osc,3))
+    ALLOCATE(dr_field(n_osc_per_rank,3))
     ALLOCATE(field_contribution(max_osc,3))
+    ALLOCATE(field_proc(n_osc_per_rank))
+
 
     ! First key thing to do is to pick out 
     ! the distances that are relevant to the oscillators
@@ -54,38 +78,75 @@ SUBROUTINE calculate_field(bonds, drx, dry, drz, dr, id1, id2, charges, osc_grps
     !CALL MPI_BARRIER(MPI_COMM_WORLD, ierror)
 
     dr_field = 0.0
-    dipole_vec = 0.0
-    field = 0.0
+    field_proc = 0.0
+    dpx_proc = 0.0; dpy_proc = 0.0; dpz_proc = 0.0
+    dipole_proc = 0.0
 
-    DO i=1, n_osc
+    DO i=istart, istop
+        iter = i - istart + 1
         ! Calculate the field at the ith oscillator
         ! 1) Loop over all distances calculated
         osc_sum = 0
         field_contribution = 0.0
         ! Get the field contributions
         CALL Calculate_Field_Contribution(id1, id2, osc_grps, dr_vec, dr & 
-                , bonds(i,:), charges, osc_sum, field_contribution, dipole_vec(i,:))
-
+                , bonds(i,:), charges, osc_sum, field_contribution, dipole_proc(:))
+        ! Set these variables based on dipole_proc
+        dpx_proc(iter) = dipole_proc(1)
+        dpy_proc(iter) = dipole_proc(2)
+        dpz_proc(iter) = dipole_proc(3)
         DO j=1, max_osc
             !write(*,*) osc_sum(j), grp_count(j)
             ! only add the contribution from j if the total number within the osc group
             ! matches what is expected - this is to maintain molecules whole.
             IF (osc_sum(j) == grp_count(j)) THEN
-                dr_field(i,:) = dr_field(i,:) + field_contribution(j,:)
+                dr_field(iter,:) = dr_field(iter,:) + field_contribution(j,:)
             END IF
         END DO 
 
-        ! Convert units
-        dr_field(i,:) = dr_field(i,:) * angperau**2.0
+        ! Convert units to Atomic Units
+        dr_field(iter,:) = dr_field(iter,:) * angperau**2.0
 
-        ! Calculate the final field
-        field(i) = dot_product(dr_field(i,:), dipole_vec(i,:))
+        ! Calculate the final field value, for the processor
+        field_proc(iter) = dot_product(dr_field(iter,:), dipole_proc(:))
     END DO
+
+    ! TODO: Generate counts and displs arrays for gatherv
+    IF (rank == 0) THEN
+        DO i = 1, nranks
+            counts(i) = min(n_osc_per_rank*i, n_osc)
+        END DO
+
+        displs(1) = 0
+        DO i=2, nranks
+            displs(i) = sum(counts(1:i-1))
+        END DO
+    END IF
+
+    ! TODO: Gather the field values
+    CALL MPI_GATHERV(field_proc, rank_count, MPI_REAL &
+        , field, counts, displs, MPI_REAL, 0, MPI_COMM_WORLD)
+    ! TODO: Gatehr the dipole values for x, y and z components
+    CALL MPI_GATHERV(dpx_proc, rank_count, MPI_REAL &
+        , dpx, counts, displs, MPI_REAL, 0, MPI_COMM_WORLD)
+    CALL MPI_GATHERV(dpy_proc, rank_count, MPI_REAL &
+        , dpy, counts, displs, MPI_REAL, 0, MPI_COMM_WORLD)
+    CALL MPI_GATHERV(dpz_proc, rank_count, MPI_REAL &
+        , dpz, counts, displs, MPI_REAL, 0, MPI_COMM_WORLD)
+    ! TODO: Set rank 0 values for the dipoole
+    dipole_vec(:,1) = dpx
+    dipole_vec(:,2) = dpy
+    dipole_vec(:,3) = dpz
 
     DEALLOCATE(jgroup1, jgroup2)
     DeALLOCATE(osc_sum)
     DEALLOCATE(dr_field)
     DEALLOCATE(field_contribution)
+    DEALLOCATE(field_proc)
+    IF (rank == 0) THEN
+        DEALLOCATE(counts)
+        DEALLOCATE(displs)
+    ENDIF
 
 
     
