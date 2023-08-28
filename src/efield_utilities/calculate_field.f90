@@ -68,9 +68,10 @@ SUBROUTINE calculate_field(bonds, drx, dry, drz, dr, id1, id2, charges, osc_grps
 
     ALLOCATE(jgroup1(size(id1)), jgroup2(size(id2)))
     ALLOCATE(osc_sum(max_osc))
-    ALLOCATE(dr_field(n_osc_per_rank,3))
+    ALLOCATE(dr_field(rank_count,3))
     ALLOCATE(field_contribution(max_osc,3))
-    ALLOCATE(field_proc(n_osc_per_rank))
+    ALLOCATE(field_proc(rank_count))
+    ALLOCATE(dpx_proc(rank_count), dpy_proc(rank_count), dpz_proc(rank_count))
 
 
     ! First key thing to do is to pick out 
