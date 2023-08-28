@@ -147,14 +147,12 @@ SUBROUTINE calculate_field(bonds, drx, dry, drz, dr, id1, id2, charges, osc_grps
     WRITE(*,*) "rank val deall", rank, size(jgroup1), size(jgroup2), size(osc_sum), size(dr_field) &
             , size(field_contribution), size(field_proc), size(dipole_proc)
 
-    IF (ALLOCATED(jgroup1)) THEN
-        DEALLOCATE(jgroup1)
-    END IF 
-    DEALLOCATE(jgroup2)
-    DeALLOCATE(osc_sum)
-    DEALLOCATE(dr_field)
-    DEALLOCATE(field_contribution)
-    DEALLOCATE(field_proc)
+    !DEALLOCATE(jgroup1)
+    !DEALLOCATE(jgroup2)
+    !DeALLOCATE(osc_sum)
+    !DEALLOCATE(dr_field)
+    !DEALLOCATE(field_contribution)
+    !DEALLOCATE(field_proc)
     IF (rank == 0) THEN
         DEALLOCATE(counts)
         DEALLOCATE(displs)
