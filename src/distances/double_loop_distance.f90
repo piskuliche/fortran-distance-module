@@ -222,6 +222,14 @@ subroutine double_loop_distance(r1, r2, box, rc_sq &
         
         ! *** MPI *** *************************************************************
         CALL MPI_REDUCE(dr_count, count, 1, MPI_INTEGER, MPI_SUM, 0, MPI_COMM_WORLD, ierror)
+        IF (present(bcast)) THEN
+            IF (bcast) THEN
+                CALL MPI_BCAST(count, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierror)
+            END IF
+        END IF 
+
+        CALL MPI_BARRIER(MPI_COMM_WORLD,  ierror)
+
 
         allocate(dists(count)); allocate(atom1(count)); allocate(atom2(count))
         allocate(drx(count), dry(count), drz(count))
@@ -257,7 +265,6 @@ subroutine double_loop_distance(r1, r2, box, rc_sq &
 
         IF (present(bcast)) THEN
             IF (bcast) THEN
-                CALL MPI_BCAST(count, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierror)
                 CALL MPI_BCAST(dists, count, MPI_REAL, 0, MPI_COMM_WORLD, ierror)
                 CALL MPI_BCAST(atom1, count, MPI_INTEGER, 0, MPI_COMM_WORLD, ierror)
                 CALL MPI_BCAST(atom2, count, MPI_INTEGER, 0, MPI_COMM_WORLD, ierror)
