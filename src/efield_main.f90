@@ -133,6 +133,7 @@ PROGRAM efield_main
         ALLOCATE(osc_grps(natoms))
         ALLOCATE(grp_count(max_osc))
     END IF
+    WRITE(*,*) "rank has ", natoms, max_osc, "atoms and oscillators"
 
     CALL MPI_BARRIER(MPI_COMM_WORLD,ierror)
     CALL MPI_BCAST(rc_sq, 1, MPI_REAL, 0, MPI_COMM_WORLD, ierror)
