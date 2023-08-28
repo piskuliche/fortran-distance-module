@@ -62,7 +62,7 @@ PROGRAM efield_main
     ! Electric field variables
     REAL, ALLOCATABLE :: efield(:)
     REAL, ALLOCATABLE :: dipole_vec(:,:)
-    REAL :: start, finish
+    REAL :: start, finish, fstart, ffinish
     
     ! Writing Variables
     LOGICAL :: init_field_files
@@ -155,6 +155,9 @@ PROGRAM efield_main
 
     ! Loop over frames
     DO frame=1, nframes
+        IF (rank == 0) THEN
+            CALL CPU_TIME(fstart)
+        END IF
         ! (3) Read Coordinates
         IF (rank == 0) THEN
             write(*,*) "Reading frame", frame
@@ -207,6 +210,7 @@ PROGRAM efield_main
             CALL Write_Field_Files(efield, dipole_vec, initialize=init_field_files)
             CALL CPU_TIME(finish)
             WRITE(*,*) "Time to write field: ", finish-start
+            WRITE(*,*) "Total frame time ", finish-fstart
         END IF
 
     END DO 
