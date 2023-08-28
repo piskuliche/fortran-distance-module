@@ -48,6 +48,7 @@ SUBROUTINE calculate_field(bonds, drx, dry, drz, dr, id1, id2, charges, osc_grps
     istop = min(n_osc, n_osc_per_rank*(rank+1))
     rank_count = istop-istart+1
     WRITE(*,*) "test-mpi-field", istart, istop, rank_count
+    WRITE(*,*) size(id1)
 
 
     ! Maximum oscillator group number - sets indexing for
