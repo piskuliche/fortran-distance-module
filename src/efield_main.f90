@@ -187,7 +187,11 @@ PROGRAM efield_main
         IF (rank == 0) THEN
             write(*,*) "Found ", drcount, "Distances Total"
             CALL CPU_TIME(start)
-            CALL calculate_field(bonds, drx, dry, drz, dr, id1, id2, charges, osc_grps, grp_count, efield, dipole_vec)
+        END IF
+
+        CALL calculate_field(bonds, drx, dry, drz, dr, id1, id2, charges, osc_grps, grp_count, efield, dipole_vec)
+        
+        IF (rank == 9) THEN
             CALL CPU_TIME(finish)
             write(*,*) "Time to calculate field: ", finish-start
             
