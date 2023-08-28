@@ -138,9 +138,11 @@ SUBROUTINE calculate_field(bonds, drx, dry, drz, dr, id1, id2, charges, osc_grps
         , dpz, counts, displs, MPI_REAL, 0, MPI_COMM_WORLD)
     CALL MPI_BARRIER(MPI_COMM_WORLD, ierror)
     ! TODO: Set rank 0 values for the dipoole
-    dipole_vec(:,1) = dpx
-    dipole_vec(:,2) = dpy
-    dipole_vec(:,3) = dpz
+    IF (rank == 0) THEN
+        dipole_vec(:,1) = dpx
+        dipole_vec(:,2) = dpy
+        dipole_vec(:,3) = dpz
+    END IF 
 
     DEALLOCATE(jgroup1, jgroup2)
     DeALLOCATE(osc_sum)
