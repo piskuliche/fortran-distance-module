@@ -127,6 +127,7 @@ PROGRAM efield_main
     IF (rank > 0) THEN
         ALLOCATE(charges(natoms))
         ALLOCATE(oscs(natoms))
+        ALLOCATE(osc_grps(natoms))
     END IF
 
     CALL MPI_BARRIER(MPI_COMM_WORLD,ierror)
