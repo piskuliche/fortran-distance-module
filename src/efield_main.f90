@@ -196,7 +196,7 @@ PROGRAM efield_main
         ! while the other ranks write out.
         if (rank == 0) THEN
             write(*,*) "Finished frame", frame
-            
+            CALL CPU_TIME(start)
             ! Don't overwrite files on higher frames
             IF (frame == 1) THEN
                 init_field_files = .true.
@@ -205,6 +205,8 @@ PROGRAM efield_main
             END IF
 
             CALL Write_Field_Files(efield, dipole_vec, initialize=init_field_files)
+            CALL CPU_TIME(finish)
+            WRITE(*,*) "Time to write field: ", finish-start
         END IF
 
     END DO 
