@@ -185,7 +185,7 @@ PROGRAM efield_main
         CALL double_loop_distance(r, r, L, rc_sq, dr, id1, id2 &
                     , drcount, same_array=.true., cell_length=0.0 &
                     , load_balance=load_balance, include_vector=include_vector &
-                    , drx=drx, dry=dry, drz=drz, verbosity=0)
+                    , drx=drx, dry=dry, drz=drz, verbosity=0, bcast=.true.)
 
         CALL MPI_BARRIER(MPI_COMM_WORLD, ierror)
         ! (4b) Turn distances into the electric field
