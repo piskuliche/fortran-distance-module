@@ -154,6 +154,7 @@ SUBROUTINE calculate_field(bonds, drx, dry, drz, dr, id1, id2, charges, osc_grps
     DEALLOCATE(dr_field)
     DEALLOCATE(field_contribution)
     DEALLOCATE(field_proc)
+    DEALLOCATE(dpx_proc, dpy_proc, dpz_proc)
     IF (rank == 0) THEN
         DEALLOCATE(counts)
         DEALLOCATE(displs)
