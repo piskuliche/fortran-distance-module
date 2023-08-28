@@ -144,6 +144,8 @@ SUBROUTINE calculate_field(bonds, drx, dry, drz, dr, id1, id2, charges, osc_grps
         dipole_vec(:,2) = dpy
         dipole_vec(:,3) = dpz
     END IF 
+    WRITE(*,*) "rank val deall", rank, size(jgroup1), size(jgroup2), size(osc_sum), size(dr_field) &
+            , size(field_contribution), size(field_proc), size(dipole_proc)
 
     DEALLOCATE(jgroup1, jgroup2)
     DeALLOCATE(osc_sum)
