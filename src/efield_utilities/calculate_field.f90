@@ -126,6 +126,8 @@ SUBROUTINE calculate_field(bonds, drx, dry, drz, dr, id1, id2, charges, osc_grps
         DO i=2, nranks
             displs(i) = sum(counts(1:i-1))
         END DO
+        WRITE(*,*) counts
+        WRITE(*,*) displs
     END IF
 
     ! TODO: Gather the field values
@@ -148,7 +150,7 @@ SUBROUTINE calculate_field(bonds, drx, dry, drz, dr, id1, id2, charges, osc_grps
 
     DEALLOCATE(jgroup1)
     DEALLOCATE(jgroup2)
-    DeALLOCATE(osc_sum)
+    DEALLOCATE(osc_sum)
     DEALLOCATE(dr_field)
     DEALLOCATE(field_contribution)
     DEALLOCATE(field_proc)
