@@ -1,6 +1,6 @@
 subroutine double_loop_distance(r1, r2, box, rc_sq &
         , dists, atom1, atom2, count, same_array, cell_length, load_balance &
-        , include_vector, drx, dry, drz, verbosity)
+        , include_vector, drx, dry, drz, verbosity, bcast)
     ! This subroutine calculates the distance between all pairs of atoms in a system
     ! using a double loop.
     !
@@ -31,6 +31,7 @@ subroutine double_loop_distance(r1, r2, box, rc_sq &
         LOGICAL, INTENT(inout), optional :: load_balance
         logical, intent(in), optional :: include_vector
         INTEGER, INTENT(in), optional :: verbosity
+        logical, intent(in), optional :: bcast ! Should the data be broadcasted to all ranks?
         ! Outputs *************************************************************
         REAL, ALLOCATABLE, INTENT(out) :: dists(:)
         INTEGER, ALLOCATABLE, INTENT(out) :: atom1(:), atom2(:)
@@ -253,6 +254,18 @@ subroutine double_loop_distance(r1, r2, box, rc_sq &
                         , counts, displs, MPI_REAL, 0, MPI_COMM_WORLD, ierror)
 
         CALL MPI_BARRIER(MPI_COMM_WORLD,  ierror)
+
+        IF (present(bcast)) THEN
+            IF (bcast) THEN
+                CALL MPI_BCAST(count, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierror)
+                CALL MPI_BCAST(dists, count, MPI_REAL, 0, MPI_COMM_WORLD, ierror)
+                CALL MPI_BCAST(atom1, count, MPI_INTEGER, 0, MPI_COMM_WORLD, ierror)
+                CALL MPI_BCAST(atom2, count, MPI_INTEGER, 0, MPI_COMM_WORLD, ierror)
+                CALL MPI_BCAST(drx, count, MPI_REAL, 0, MPI_COMM_WORLD, ierror)
+                CALL MPI_BCAST(dry, count, MPI_REAL, 0, MPI_COMM_WORLD, ierror)
+                CALL MPI_BCAST(drz, count, MPI_REAL, 0, MPI_COMM_WORLD, ierror)
+            END IF
+        END IF 
         ! **************************************************************************
         IF (rank == 0) THEN 
             IF (PRESENT(verbosity) .and. verbosity > 0) THEN
