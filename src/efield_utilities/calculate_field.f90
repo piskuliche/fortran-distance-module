@@ -120,7 +120,7 @@ SUBROUTINE calculate_field(bonds, drx, dry, drz, dr, id1, id2, charges, osc_grps
     IF (rank == 0) THEN
         counts(1) = rank_count
         DO i = 2, nranks
-            counts(i) = min(n_osc_per_rank*i, n_osc) - counts(i-1)
+            counts(i) = min(n_osc_per_rank*i, n_osc) - sum(counts(1:i-1))
         END DO
 
         displs(1) = 0
