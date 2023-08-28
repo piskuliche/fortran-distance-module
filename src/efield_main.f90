@@ -62,6 +62,7 @@ PROGRAM efield_main
     ! Electric field variables
     REAL, ALLOCATABLE :: efield(:)
     REAL, ALLOCATABLE :: dipole_vec(:,:)
+    REAL :: start, finish
     
     ! Writing Variables
     LOGICAL :: init_field_files
@@ -182,8 +183,10 @@ PROGRAM efield_main
         ! (4b) Turn distances into the electric field
         IF (rank == 0) THEN
             write(*,*) "Found ", drcount, "Distances Total"
-
+            CALL CPU_TIME(start)
             CALL calculate_field(bonds, drx, dry, drz, dr, id1, id2, charges, osc_grps, grp_count, efield, dipole_vec)
+            CALL CPU_TIME(finish)
+            write(*,*) "Time to calculate field: ", finish-start
             
         END IF
         
