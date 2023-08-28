@@ -55,8 +55,6 @@ SUBROUTINE calculate_field(bonds, drx, dry, drz, dr, id1, id2, charges, osc_grps
     max_osc = MAXVAL(osc_grps)
     IF ( rank == 0 ) THEN
 
-        field = 0.0
-        dipole_vec = 0.0
         
         ALLOCATE(counts(nranks), displs(nranks))
         ALLOCATE(dpx(n_osc), dpy(n_osc), dpz(n_osc))
@@ -66,6 +64,10 @@ SUBROUTINE calculate_field(bonds, drx, dry, drz, dr, id1, id2, charges, osc_grps
 
         ALLOCATE(field(n_osc))
         ALLOCATE(dipole_vec(n_osc,3))
+
+
+        field = 0.0
+        dipole_vec = 0.0
 
     END IF  
 
