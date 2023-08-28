@@ -135,6 +135,7 @@ PROGRAM efield_main
     CALL MPI_BCAST(oscs, size(oscs), MPI_INTEGER, 0, MPI_COMM_WORLD, ierror)
     CALL MPI_BCAST(nframes, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierror)
     CALL MPI_BCAST(bonds, size(bonds), MPI_INTEGER, 0, MPI_COMM_WORLD, ierror)
+    CALL MPI_BCAST(osc_grps, size(osc_grps), MPI_INTEGER, 0, MPI_COMM_WORLD, ierror)
     CALL MPI_BARRIER(MPI_COMM_WORLD,ierror)
 
     if (rank == 0) THEN
@@ -190,7 +191,7 @@ PROGRAM efield_main
         END IF
 
         CALL calculate_field(bonds, drx, dry, drz, dr, id1, id2, charges, osc_grps, grp_count, efield, dipole_vec)
-        
+
         IF (rank == 9) THEN
             CALL CPU_TIME(finish)
             write(*,*) "Time to calculate field: ", finish-start
