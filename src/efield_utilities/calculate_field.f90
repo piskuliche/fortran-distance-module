@@ -43,7 +43,7 @@ SUBROUTINE calculate_field(bonds, drx, dry, drz, dr, id1, id2, charges, osc_grps
 
     ! Number of oscillators
     n_osc = SIZE(bonds, 1)
-    n_osc_per_rank = CEILING(n_osc/nranks)
+    n_osc_per_rank = CEILING(REAL(n_osc)/REAL(nranks))
     istart = max(1, n_osc_per_rank*rank + 1)
     istop = min(n_osc, n_osc_per_rank*(rank+1))
     rank_count = istop-istart+1
