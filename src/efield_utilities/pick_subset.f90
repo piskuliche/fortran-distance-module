@@ -1,6 +1,7 @@
 SUBROUTINE pick_subset(id1, id2, bonds, osc_indices)
     ! *********************************************************************
-    ! 
+    ! This function takes a list of bonds, and then returns a list of the
+    ! indices of the bonds that are in the list of id1 and id2.
     !
     ! Input:
     !  
