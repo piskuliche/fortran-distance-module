@@ -31,7 +31,7 @@ SUBROUTINE calculate_field(bonds, drx, dry, drz, dr, id1, id2, charges, osc_grps
     REAL, DIMENSION(3) :: dipole_proc
     REAL, ALLOCATABLE :: dpx_proc(:), dpy_proc(:), dpz_proc(:)
     REAL, ALLOCATABLE :: dpx(:), dpy(:), dpz(:)
-    INTEGER, ALLOCATABLE :: counts, displs
+    INTEGER, ALLOCATABLE :: counts(:), displs(:)
 
     CALL MPI_COMM_RANK(MPI_COMM_WORLD, rank, ierror)
     CALL MPI_COMM_SIZE(MPI_COMM_WORLD, nranks, ierror)
